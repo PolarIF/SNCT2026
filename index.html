@@ -1,346 +1,406 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Semana Nacional de Ciência e Tecnologia — IFRO</title>
-<meta name="description" content="23ª Semana Nacional de Ciência e Tecnologia — Ciência Delas. De 27 a 30 de outubro. Programação e inscrições.">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>23ª Semana Nacional de Ciência e Tecnologia — IFRO Campus Ariquemes</title>
+<meta name="description" content="23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes, de 27 a 30 de outubro de 2026. Tema: Ciência Delas. Programação, eventos e inscrições.">
+<link rel="canonical" href="https://snctifroari.online/">
+<meta name="author" content="Instituto Federal de Rondônia — Campus Ariquemes">
+<meta name="theme-color" content="#123B1C">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="SNCT — IFRO Campus Ariquemes">
+<meta property="og:url" content="https://snctifroari.online/">
+<meta property="og:title" content="23ª Semana Nacional de Ciência e Tecnologia — IFRO Campus Ariquemes">
+<meta property="og:description" content="De 27 a 30 de outubro de 2026. Tema: Ciência Delas. Feiras, oficinas, mostras e seminários abertos à comunidade.">
+<meta property="og:image" content="https://snctifroari.online/assets/img/og-snct-ifro-ariquemes.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="23ª Semana Nacional de Ciência e Tecnologia, tema Ciência Delas, IFRO Campus Ariquemes, 27 a 30 de outubro de 2026.">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --green:#2F9E41;
-    --green-dark:#194F26;
-    --green-deep:#123B1C;
-    --red:#CD191E;
-    --ink:#141414;
-    --paper:#FAFAF8;
-    --line: rgba(20,20,20,0.13);
-    --max: 900px;
-  }
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{
-    margin:0;
-    background:var(--paper);
-    color:var(--ink);
-    font-family:"Open Sans", sans-serif;
-    font-size:17px;
-    line-height:1.62;
-    -webkit-font-smoothing:antialiased;
-  }
-  h1,h2,h3,h4{
-    font-family:"Open Sans", sans-serif;
-    font-weight:800;
-    line-height:1.14;
-    margin:0;
-  }
-  a{color:inherit;}
-  .wrap{max-width:var(--max); margin:0 auto; padding:0 24px;}
-
-  /* IF module mark, built from the brand grid described in the manual */
-  .mark{display:grid; grid-template-columns:repeat(3, 8px); grid-template-rows:repeat(4, 8px); gap:3px; flex-shrink:0;}
-  .mark i{display:block; border-radius:2px; background:var(--green);}
-  .mark i:nth-child(1){background:var(--red); border-radius:50%;}
-  .mark i:nth-child(3){grid-column:3;}
-  .mark i:nth-child(6){visibility:hidden;}
-  .mark i:nth-child(9){visibility:hidden;}
-  .mark.light i{background:#EAF4EC;}
-  .mark.light i:nth-child(1){background:var(--red);}
-
-  /* nav */
-  header.site{
-    position:sticky; top:0; z-index:10;
-    background:rgba(250,250,248,0.94);
-    backdrop-filter: blur(6px);
-    border-bottom:1px solid var(--line);
-  }
-  nav.wrap{
-    display:flex; align-items:center; justify-content:space-between;
-    padding-top:16px; padding-bottom:16px;
-  }
-  .brand{display:flex; align-items:center; gap:12px; font-weight:800; font-size:1.02rem;}
-  .navlinks{display:flex; gap:26px; font-size:0.95rem; font-weight:600;}
-  .navlinks a{text-decoration:none; border-bottom:2px solid transparent; padding-bottom:2px;}
-  .navlinks a:hover{border-bottom-color:var(--green);}
-
-  /* hero */
-  .hero{background:var(--green-deep); color:#fff; padding:70px 0 54px;}
-  .hero .mark{margin-bottom:26px;}
-  .hero .eyebrow{color:#9AD6A8; font-weight:700; margin-bottom:10px;}
-  .hero h1{font-size:clamp(2rem, 5vw, 3rem); max-width:14ch;}
-  .hero .theme{
-    display:inline-block; margin-top:16px;
-    font-weight:600; font-style:italic; font-size:1.25rem; color:#EAF4EC;
-  }
-  .hero p.lead{
-    margin-top:22px; max-width:62ch; color:#D7E7DA;
-  }
-  .hero .who{margin-top:28px; font-size:0.92rem; color:#9AD6A8;}
-
-  /* resumo strip */
-  .resumo{background:var(--green); color:#fff; padding:26px 0;}
-  .resumo .wrap{display:flex; flex-wrap:wrap; gap:10px 30px;}
-  .resumo .item{font-size:0.95rem; font-weight:600;}
-  .resumo .item span{display:block; font-weight:400; font-size:0.85rem; color:#DDF0E0;}
-
-  section{padding:60px 0;}
-  .section-head{margin-bottom:38px;}
-  .section-head h2{font-size:1.7rem;}
-  .section-head p{margin-top:10px; color:rgba(20,20,20,0.7); max-width:58ch;}
-
-  /* evento block */
-  .evento{
-    padding:38px 0;
-    border-top:1px solid var(--line);
-    display:grid;
-    grid-template-columns: 40px 1fr;
-    gap:20px;
-  }
-  .evento:first-of-type{border-top:none; padding-top:0;}
-  .evento .mark{margin-top:6px;}
-  .evento h3{font-size:1.4rem;}
-  .evento .trilha{
-    display:inline-block; margin-top:8px;
-    font-size:0.8rem; font-weight:700; color:var(--green);
-    border:1px solid var(--green); border-radius:3px;
-    padding:3px 9px;
-  }
-  .evento .responsavel{margin-top:14px; font-size:0.92rem; color:rgba(20,20,20,0.65);}
-  .evento .responsavel strong{color:var(--ink);}
-  .evento .descricao{margin-top:14px; max-width:64ch; color:rgba(20,20,20,0.85);}
-  .evento .descricao em{color:rgba(20,20,20,0.55); font-style:italic;}
-  .evento .miniprog{margin-top:18px;}
-  .evento .miniprog h4{font-size:0.85rem; font-weight:700; text-transform:none; margin-bottom:8px; color:rgba(20,20,20,0.6);}
-  .evento .miniprog ul{margin:0; padding:0; list-style:none;}
-  .evento .miniprog li{
-    padding:6px 0 6px 14px; border-left:2px solid var(--line);
-    font-size:0.93rem; margin-bottom:2px;
-  }
-  .btn{
-    display:inline-block; margin-top:20px;
-    background:var(--red); color:#fff; text-decoration:none;
-    font-weight:700; font-size:0.94rem;
-    padding:11px 22px; border-radius:3px;
-  }
-  .btn:hover{background:#a91317;}
-
-  #sobre .wrap p{max-width:64ch;}
-
-  footer{background:var(--green-deep); color:#D7E7DA; padding:40px 0;}
-  footer .wrap{display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; font-size:0.9rem;}
-  footer .mark{margin-bottom:14px;}
-
-  @media (max-width:600px){
-    .evento{grid-template-columns:1fr;}
-    .evento .mark{display:none;}
-    .navlinks{gap:14px; font-size:0.85rem;}
-  }
-</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&family=Source+Sans+3:ital,wght@0,400..700;1,400&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-<header class="site">
-  <nav class="wrap">
-    <div class="brand"><span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span> Semana C&amp;T · IFRO</div>
-    <div class="navlinks">
+<a class="pular" href="#conteudo">Ir para o conteúdo</a>
+
+<header class="topo" id="topo">
+  <div class="shell topo__barra">
+    <a class="marca" href="#topo" aria-label="23ª SNCT — IFRO Campus Ariquemes, início da página">
+      <img class="marca__logo" src="assets/img/ifro-lockup.svg" width="205" height="65"
+           alt="Instituto Federal de Rondônia — Campus Ariquemes">
+      <span class="marca__sigla">23ª <b>SNCT</b></span>
+    </a>
+
+    <nav class="menu" aria-label="Seções da página">
       <a href="#programacao">Programação</a>
       <a href="#eventos">Eventos</a>
       <a href="#sobre">Sobre</a>
-    </div>
-  </nav>
+    </nav>
+  </div>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <span class="mark light"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-    <div class="eyebrow">27 a 30 de outubro</div>
-    <h1>Semana Nacional de Ciência e Tecnologia</h1>
-    <div class="theme">23ª edição — Ciência Delas</div>
-    <p class="lead">Quatro dias de feiras, oficinas, mostras e seminários abertos à comunidade escolar e ao público externo. Inscreva-se nos eventos que fazem parte da programação do Instituto Federal de Rondônia.</p>
-    <div class="who">Instituto Federal de Rondônia — [Campus]</div>
-  </div>
-</section>
+<main id="conteudo">
 
-<section class="resumo" id="programacao">
-  <div class="wrap">
-    <div class="item">27/10 — terça<span>Feira das Profissões e Empreendedorismo</span></div>
-    <div class="item">28/10 — quarta<span>Solenidade de Lançamento e Mostras</span></div>
-    <div class="item">29 e 30/10 — quinta e sexta<span>SIAAGRO, oficinas, demonstrações e visitações</span></div>
-  </div>
-</section>
+  <!-- ============================================================ herói -->
+  <section class="heroi">
+    <div class="shell heroi__grade">
 
-<section id="eventos">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>Eventos</h2>
-      <p>Cada evento tem inscrição própria. Confira abaixo o que cada um aborda, quem é o responsável e a programação resumida.</p>
+      <p class="heroi__data" style="--i:0">
+        <span class="modulo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        27 a 30 de outubro de 2026
+      </p>
+
+      <h1 style="--i:1">23ª Semana Nacional de Ciência e Tecnologia</h1>
+
+      <p class="heroi__tema" style="--i:2">
+        <em>Tema da edição</em>
+        <span>Ciência Delas</span>
+      </p>
+
+      <p class="lead" style="--i:3">
+        Quatro dias de feiras, oficinas, mostras e seminários abertos à comunidade
+        escolar e ao público externo, no Instituto Federal de Rondônia.
+      </p>
+
+      <p class="heroi__acoes" style="--i:4">
+        <a class="botao botao--acao" href="#programacao">
+          Ver a programação <span class="seta" aria-hidden="true">→</span>
+        </a>
+        <a class="botao botao--fantasma-claro" href="#eventos">Eventos e inscrições</a>
+      </p>
+
     </div>
 
-    <!-- Evento 1 -->
-    <div class="evento">
-      <span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div>
-        <h3>Feira das Profissões e Empreendedorismo</h3>
-        <span class="trilha">CIEEC</span>
-        <p class="responsavel">Responsável: <strong>[Nome do responsável]</strong> — CIEEC</p>
-        <p class="descricao"><em>[Descrição a preencher]</em> — Espaço dedicado à orientação profissional e ao empreendedorismo, reunindo instituições de ensino, empresas parceiras e a Empresa Júnior. Inclui uma roda de conversa sobre profissões, empreendedorismo e mercado de trabalho.</p>
-        <div class="miniprog">
-          <h4>Programação resumida — 27/10</h4>
-          <ul>
-            <li>Feira das Profissões</li>
-            <li>Espaço das Instituições de Ensino</li>
-            <li>Feira de Empreendedorismo</li>
-            <li>Estandes de empresas e instituições parceiras</li>
-            <li>Empresa Júnior e projetos de empreendedorismo</li>
-            <li>Roda de conversa: Profissões, Empreendedorismo e Mercado de Trabalho</li>
-          </ul>
-        </div>
-        <a class="btn" href="#" target="_blank" rel="noopener">Inscreva-se</a>
+    <div class="shell heroi__rodape">
+      <img src="assets/img/ifro-horizontal-branca.svg" width="275" height="60"
+           alt="Instituto Federal de Rondônia — Campus Ariquemes">
+
+      <!-- preenchida pelo JS a partir de data-inicio/data-fim; sem JS, não aparece -->
+      <p class="contagem" id="contagem" data-inicio="2026-10-27T08:00:00-04:00"
+         data-fim="2026-10-30T23:59:00-04:00" hidden></p>
+    </div>
+  </section>
+
+  <!-- ====================================================== programação -->
+  <section class="dias" id="programacao">
+    <div class="shell">
+      <div class="dias__cabeca">
+        <p class="rotulo">Programação geral</p>
+        <h2>Como a semana se divide</h2>
+      </div>
+
+      <ul class="dias__lista">
+        <li class="dia revela" style="--i:0">
+          <p class="dia__data">27/10 <small>terça</small></p>
+          <p>Feira das Profissões e Empreendedorismo</p>
+        </li>
+        <li class="dia revela" style="--i:1">
+          <p class="dia__data">28/10 <small>quarta</small></p>
+          <p>Solenidade de Lançamento e Mostras dos cursos</p>
+        </li>
+        <li class="dia revela" style="--i:2">
+          <p class="dia__data">29 e 30/10 <small>quinta e sexta</small></p>
+          <p>SIAAGRO, oficinas, demonstrações e visitações</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- =========================================================== eventos -->
+  <!--
+    COMO EDITAR UM EVENTO
+    - Responsável definido: troque
+        <span class="pendente">a confirmar</span>
+      por
+        <strong>Nome do Professor</strong>
+    - Inscrição aberta: no <article>, acrescente o atributo  data-aberto
+      e troque o bloco .evento__acao por:
+        <p class="evento__acao">
+          <a class="botao botao--acao" href="LINK-DO-SUAP" target="_blank" rel="noopener">
+            Inscreva-se <span class="seta" aria-hidden="true">→</span>
+          </a>
+        </p>
+      Acrescente também <span class="selo-aberto">Inscrições abertas</span> em .evento__topo.
+      O evento "IFROmatizando" abaixo serve de modelo — ele já está assim.
+  -->
+  <section class="secao" id="eventos">
+    <div class="shell">
+      <div class="cabeca-secao">
+        <p class="rotulo">Eventos</p>
+        <h2>Sete eventos, inscrição por evento</h2>
+        <p class="lead">
+          Cada evento tem inscrição própria. Veja abaixo o que cada um aborda, quem
+          responde por ele e a programação resumida.
+        </p>
+      </div>
+
+      <div class="grade-eventos">
+
+        <!-- 1 -->
+        <article class="evento revela" style="--i:0">
+          <p class="evento__topo"><span class="trilha">CIEEC</span></p>
+          <h3>Feira das Profissões e Empreendedorismo</h3>
+          <p class="evento__responsavel">
+            Responsável: <span class="pendente">a confirmar</span> · CIEEC
+          </p>
+          <p class="evento__desc">
+            Espaço dedicado à orientação profissional e ao empreendedorismo, reunindo
+            instituições de ensino, empresas parceiras e a Empresa Júnior. Inclui uma
+            roda de conversa sobre profissões, empreendedorismo e mercado de trabalho.
+          </p>
+          <details class="evento__prog">
+            <summary><span>Programação · 27/10</span></summary>
+            <ul>
+              <li>Feira das Profissões</li>
+              <li>Espaço das Instituições de Ensino</li>
+              <li>Feira de Empreendedorismo</li>
+              <li>Estandes de empresas e instituições parceiras</li>
+              <li>Empresa Júnior e projetos de empreendedorismo</li>
+              <li>Roda de conversa: Profissões, Empreendedorismo e Mercado de Trabalho</li>
+            </ul>
+          </details>
+          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+        </article>
+
+        <!-- 2 -->
+        <article class="evento revela" style="--i:1">
+          <p class="evento__topo"><span class="trilha">Abertura oficial</span></p>
+          <h3>Solenidade de Lançamento e Mostras</h3>
+          <p class="evento__responsavel">
+            Responsável: <span class="pendente">a confirmar</span> · Comissão organizadora
+          </p>
+          <p class="evento__desc">
+            Cerimônia oficial de abertura da 23ª Semana Nacional de Ciência e Tecnologia,
+            com mostras dos cursos técnicos e superiores do campus.
+          </p>
+          <details class="evento__prog">
+            <summary><span>Programação · 28/10</span></summary>
+            <ul>
+              <li>Cerimônia de abertura</li>
+              <li>Mostras dos cursos técnicos e superiores</li>
+            </ul>
+          </details>
+          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+        </article>
+
+        <!-- 3 -->
+        <article class="evento revela" style="--i:2">
+          <p class="evento__topo"><span class="trilha">Agronomia e Agropecuária</span></p>
+          <h3>SIAAGRO — Seminário Integrado de Agropecuária e Agronomia</h3>
+          <p class="evento__responsavel">
+            Responsável: <span class="pendente">a confirmar</span> · Coordenação de Agronomia e Agropecuária
+          </p>
+          <p class="evento__desc">
+            Seminário com oficinas, demonstrações e visitações voltadas à cadeia produtiva
+            agropecuária, aberto a estudantes e à comunidade externa.
+          </p>
+          <details class="evento__prog">
+            <summary><span>Programação · 29 e 30/10</span></summary>
+            <ul>
+              <li>Oficinas técnicas</li>
+              <li>Demonstrações práticas</li>
+              <li>Visitações guiadas</li>
+            </ul>
+          </details>
+          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+        </article>
+
+        <!-- 4 -->
+        <article class="evento revela" style="--i:3">
+          <p class="evento__topo"><span class="trilha">Alimentos</span></p>
+          <h3>Curso Técnico em Alimentos — Atividades da Semana</h3>
+          <p class="evento__responsavel">
+            Responsável: <span class="pendente">a confirmar</span> · Coordenação do Curso Técnico em Alimentos
+          </p>
+          <p class="evento__desc">
+            Oficinas e demonstrações práticas de processamento e segurança de alimentos,
+            conduzidas por estudantes e docentes do curso técnico.
+          </p>
+          <details class="evento__prog">
+            <summary><span>Programação · 29 e 30/10</span></summary>
+            <ul>
+              <li>Oficinas práticas</li>
+              <li>Demonstrações de processamento</li>
+              <li>Visitações</li>
+            </ul>
+          </details>
+          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+        </article>
+
+        <!-- 5 — modelo de evento com inscrição aberta -->
+        <article class="evento revela" style="--i:4" data-aberto>
+          <p class="evento__topo">
+            <span class="trilha">Informática</span>
+            <span class="selo-aberto">Inscrições abertas</span>
+          </p>
+          <h3>IFROmatizando — III Workshop de Informática</h3>
+          <p class="evento__responsavel">
+            Responsável: <strong>Eudóxia Moura</strong> · Coordenação de Informática
+          </p>
+          <p class="evento__desc">
+            Terceira edição do workshop de informática, com oficinas práticas e
+            demonstrações de projetos de desenvolvimento de sistemas.
+          </p>
+          <details class="evento__prog">
+            <summary><span>Programação · 29 e 30/10</span></summary>
+            <ul>
+              <li>Oficinas de programação</li>
+              <li>Demonstrações de projetos</li>
+              <li>Visitações ao laboratório</li>
+            </ul>
+          </details>
+          <p class="evento__acao">
+            <a class="botao botao--acao" href="https://suap.ifro.edu.br/eventos/inscricao/1/1229/"
+               target="_blank" rel="noopener">
+              Inscreva-se <span class="seta" aria-hidden="true">→</span>
+            </a>
+          </p>
+        </article>
+
+        <!-- 6 -->
+        <article class="evento revela" style="--i:5">
+          <p class="evento__topo"><span class="trilha">Biologia</span></p>
+          <h3>Biologia — Oficinas e Demonstrações</h3>
+          <p class="evento__responsavel">
+            Responsável: <span class="pendente">a confirmar</span> · Coordenação de Biologia
+          </p>
+          <p class="evento__desc">
+            Atividades práticas e demonstrações voltadas à divulgação científica em
+            Biologia, abertas a estudantes de outras escolas e à comunidade.
+          </p>
+          <details class="evento__prog">
+            <summary><span>Programação · 29 e 30/10</span></summary>
+            <ul>
+              <li>Oficinas práticas</li>
+              <li>Demonstrações</li>
+              <li>Visitações</li>
+            </ul>
+          </details>
+          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+        </article>
+
+        <!-- 7 -->
+        <article class="evento revela" style="--i:6">
+          <p class="evento__topo"><span class="trilha">Medicina Veterinária</span></p>
+          <h3>Medicina Veterinária — Oficinas e Demonstrações</h3>
+          <p class="evento__responsavel">
+            Responsável: <span class="pendente">a confirmar</span> · Coordenação de Medicina Veterinária
+          </p>
+          <p class="evento__desc">
+            Oficinas, demonstrações e visitações voltadas à área de saúde e manejo animal.
+          </p>
+          <details class="evento__prog">
+            <summary><span>Programação · 29 e 30/10</span></summary>
+            <ul>
+              <li>Oficinas práticas</li>
+              <li>Demonstrações de manejo</li>
+              <li>Visitações</li>
+            </ul>
+          </details>
+          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+        </article>
+
+        <aside class="eventos__aviso revela" style="--i:7">
+          <span class="modulo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <b>Como se inscrever</b>
+          <p>As inscrições são feitas pelo SUAP, evento por evento. Os eventos que
+          ainda não têm link abrem inscrição em breve — vale conferir esta página
+          de novo mais perto de outubro.</p>
+        </aside>
+
       </div>
     </div>
+  </section>
 
-    <!-- Evento 2 -->
-    <div class="evento">
-      <span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div>
-        <h3>Solenidade de Lançamento e Mostras</h3>
-        <span class="trilha">Abertura oficial</span>
-        <p class="responsavel">Responsável: <strong>[Nome do responsável]</strong> — Comissão organizadora</p>
-        <p class="descricao"><em>[Descrição a preencher]</em> — Cerimônia oficial de abertura da 23ª Semana Nacional de Ciência e Tecnologia, com mostras dos cursos técnicos e superiores do campus.</p>
-        <div class="miniprog">
-          <h4>Programação resumida — 28/10</h4>
-          <ul>
-            <li>Cerimônia de abertura</li>
-            <li>Mostras dos cursos técnicos e superiores</li>
-          </ul>
+  <!-- ============================================================= sobre -->
+  <section class="secao sobre" id="sobre">
+    <div class="shell sobre__grade">
+
+      <div class="sobre__texto">
+        <div class="cabeca-secao">
+          <p class="rotulo">Sobre</p>
+          <h2>Uma semana para mostrar o que se faz aqui</h2>
         </div>
-        <a class="btn" href="#" target="_blank" rel="noopener">Inscreva-se</a>
-      </div>
-    </div>
 
-    <!-- Evento 3 -->
-    <div class="evento">
-      <span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div>
-        <h3>SIAAGRO — Seminário Integrado de Agropecuária e Agronomia</h3>
-        <span class="trilha">Agronomia e Agropecuária</span>
-        <p class="responsavel">Responsável: <strong>[Nome do responsável]</strong> — Coordenação de Agronomia e Agropecuária</p>
-        <p class="descricao"><em>[Descrição a preencher]</em> — Seminário com oficinas, demonstrações e visitações voltadas à cadeia produtiva agropecuária, aberto a estudantes e à comunidade externa.</p>
-        <div class="miniprog">
-          <h4>Programação resumida — 29 e 30/10</h4>
-          <ul>
-            <li>Oficinas técnicas</li>
-            <li>Demonstrações práticas</li>
-            <li>Visitações guiadas</li>
-          </ul>
+          <p class="prosa" style="margin-top: var(--s-md)">
+          A Semana Nacional de Ciência e Tecnologia é um evento anual que integra
+          pesquisa, extensão e ensino técnico. No IFRO Campus Ariquemes ela toma o
+          campus inteiro: laboratório de informática, unidades de produção
+          agropecuária, cozinha-escola, sala de aula e pátio viram espaço de visita.
+        </p>
+        <p class="prosa">
+          Nesta edição, o tema <strong>Ciência Delas</strong> dá espaço às trajetórias
+          de mulheres na ciência e na tecnologia ao longo de toda a programação.
+        </p>
+      </div>
+
+      <dl class="ficha">
+        <div>
+          <dt>Quando</dt>
+          <dd>27 a 30 de outubro de 2026, de terça a sexta</dd>
         </div>
-        <a class="btn" href="#" target="_blank" rel="noopener">Inscreva-se</a>
-      </div>
-    </div>
-
-    <!-- Evento 4 -->
-    <div class="evento">
-      <span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div>
-        <h3>Curso Técnico em Alimentos — Atividades da Semana</h3>
-        <span class="trilha">Alimentos</span>
-        <p class="responsavel">Responsável: <strong>[Nome do responsável]</strong> — Coordenação do Curso Técnico em Alimentos</p>
-        <p class="descricao"><em>[Descrição a preencher]</em> — Oficinas e demonstrações práticas de processamento e segurança de alimentos, conduzidas por estudantes e docentes do curso técnico.</p>
-        <div class="miniprog">
-          <h4>Programação resumida — 29 e 30/10</h4>
-          <ul>
-            <li>Oficinas práticas</li>
-            <li>Demonstrações de processamento</li>
-            <li>Visitações</li>
-          </ul>
+        <div>
+          <dt>Onde</dt>
+          <dd>IFRO — Campus Ariquemes, Ariquemes (RO)</dd>
         </div>
-        <a class="btn" href="#" target="_blank" rel="noopener">Inscreva-se</a>
-      </div>
-    </div>
-
-    <!-- Evento 5 -->
-    <div class="evento">
-      <span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div>
-        <h3>IFROmatizando — III Workshop de Informática</h3>
-        <span class="trilha">Informática </span>
-        <p class="responsavel">Responsável: <strong>Eudóxia Moura</strong> — Coordenação de Informática</p>
-        <p class="descricao"><em>[Descrição a preencher]</em> — Terceira edição do workshop de informática, com oficinas práticas e demonstrações de projetos de desenvolvimento de sistemas.</p>
-        <div class="miniprog">
-          <h4>Programação — 29 e 30/10</h4>
-          <ul>
-            <li>Oficinas de programação</li>
-            <li>Demonstrações de projetos</li>
-            <li>Visitações ao laboratório</li>
-          </ul>
+        <div>
+          <dt>Para quem</dt>
+          <dd>Comunidade escolar do campus, estudantes de outras escolas e público externo</dd>
         </div>
-        <a class="btn" href="https://suap.ifro.edu.br/eventos/inscricao/1/1229/" target="_blank" rel="noopener">Inscreva-se</a>
-      </div>
-    </div>
-
-    <!-- Evento 6 -->
-    <div class="evento">
-      <span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div>
-        <h3>Biologia — Oficinas e Demonstrações</h3>
-        <span class="trilha">Biologia</span>
-        <p class="responsavel">Responsável: <strong>[Nome do responsável]</strong> — Coordenação de Biologia</p>
-        <p class="descricao"><em>[Descrição a preencher]</em> — Atividades práticas e demonstrações voltadas à divulgação científica em Biologia, abertas a estudantes de outras escolas e à comunidade.</p>
-        <div class="miniprog">
-          <h4>Programação resumida — 29 e 30/10</h4>
-          <ul>
-            <li>Oficinas práticas</li>
-            <li>Demonstrações</li>
-            <li>Visitações</li>
-          </ul>
+        <div>
+          <dt>Inscrições</dt>
+          <dd>Pelo SUAP, uma por evento. Veja a lista em <a href="#eventos">Eventos</a></dd>
         </div>
-        <a class="btn" href="#" target="_blank" rel="noopener">Inscreva-se</a>
-      </div>
-    </div>
-
-    <!-- Evento 7 -->
-    <div class="evento">
-      <span class="mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div>
-        <h3>Medicina Veterinária — Oficinas e Demonstrações</h3>
-        <span class="trilha">Medicina Veterinária</span>
-        <p class="responsavel">Responsável: <strong>[Nome do responsável]</strong> — Coordenação de Medicina Veterinária</p>
-        <p class="descricao"><em>[Descrição a preencher]</em> — Oficinas, demonstrações e visitações voltadas à área de saúde e manejo animal.</p>
-        <div class="miniprog">
-          <h4>Programação resumida — 29 e 30/10</h4>
-          <ul>
-            <li>Oficinas práticas</li>
-            <li>Demonstrações de manejo</li>
-            <li>Visitações</li>
-          </ul>
+        <div>
+          <dt>Contato</dt>
+          <!-- TROCAR pelo e-mail ou @ das redes da comissão organizadora -->
+          <dd><span class="pendente">a confirmar</span></dd>
         </div>
-        <a class="btn" href="#" target="_blank" rel="noopener">Inscreva-se</a>
+      </dl>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="rodape">
+  <div class="shell">
+    <div class="rodape__grade">
+      <div>
+        <img src="assets/img/ifro-lockup-branca.svg" width="205" height="65"
+             alt="Instituto Federal de Rondônia — Campus Ariquemes">
+        <p>
+          23ª Semana Nacional de Ciência e Tecnologia · 27 a 30 de outubro de 2026 ·
+          Campus Ariquemes
+        </p>
       </div>
+
+      <nav class="rodape__links" aria-label="Links">
+        <a href="#programacao">Programação</a>
+        <a href="#eventos">Eventos e inscrições</a>
+        <a href="#sobre">Sobre a semana</a>
+        <a href="https://portal.ifro.edu.br/ariquemes" target="_blank" rel="noopener">Portal do campus</a>
+      </nav>
     </div>
 
-  </div>
-</section>
-
-<section id="sobre">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>Sobre a semana</h2>
-      <p>A Semana Nacional de Ciência e Tecnologia é um evento anual que integra pesquisa, extensão e ensino técnico. Nesta edição, o tema Ciência Delas dá espaço às trajetórias de mulheres na ciência e na tecnologia ao longo da programação do IFRO.</p>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap" style="flex-direction:column;">
-    <span class="mark light"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-    <div style="display:flex; flex-wrap:wrap; justify-content:space-between; width:100%; gap:12px;">
-      <div>Instituto Federal de Rondônia — [Campus] · 27 a 30 de outubro</div>
-      <div>[e-mail ou @redes sociais]</div>
-    </div>
+    <p class="rodape__base">
+      <span>Instituto Federal de Educação, Ciência e Tecnologia de Rondônia</span>
+      <span>snctifroari.online</span>
+    </p>
   </div>
 </footer>
 
+<script src="assets/js/site.js" defer></script>
 </body>
 </html>
