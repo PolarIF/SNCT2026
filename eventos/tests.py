@@ -93,6 +93,32 @@ class SitePublico(Base):
         self.assertContains(r, "Palestra sobre Inteligência Artificial")
         self.assertNotContains(r, "Workshop de Flutter")
 
+    def test_filtro_de_area_sem_evento_nao_mostra_o_cronograma_inteiro(self):
+        """Os cartões da home linkam para áreas que ainda não têm atividade."""
+        r = self.client.get(reverse("cronograma"), {"area": "eletrotecnica"})
+        self.assertContains(r, "Nenhuma atividade")
+        self.assertContains(r, "Eletrotécnica")
+        self.assertNotContains(r, "Palestra sobre Inteligência Artificial")
+        self.assertNotContains(r, "Workshop de Flutter")
+
+    def test_filtro_de_area_desativada_e_ignorado(self):
+        self.eletro.ativo = False
+        self.eletro.save()
+        r = self.client.get(reverse("cronograma"), {"area": "eletrotecnica"})
+        self.assertContains(r, "Palestra sobre Inteligência Artificial")
+
+    def test_slug_inexistente_mostra_tudo(self):
+        r = self.client.get(reverse("cronograma"), {"area": "nao-existe"})
+        self.assertContains(r, "Palestra sobre Inteligência Artificial")
+        self.assertContains(r, "Workshop de Flutter")
+
+    def test_cartoes_da_home_apontam_para_o_cronograma_da_propria_area(self):
+        r = self.client.get(reverse("home"))
+        for slug in ["cieec", "geral", "agronomia-e-agropecuaria", "alimentos",
+                     "informatica", "biologia", "medicina-veterinaria"]:
+            with self.subTest(slug=slug):
+                self.assertContains(r, f'href="/cronograma/?area={slug}"')
+
     def test_area_desativada_nao_aparece_no_publico(self):
         self.ads.ativo = False
         self.ads.save()

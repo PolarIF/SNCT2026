@@ -21,14 +21,23 @@ def cronograma(request):
     """
     eventos = Evento.objects.publicos()
 
-    areas = Area.objects.filter(ativo=True, eventos__isnull=False).distinct()
+    # Os atalhos oferecem só as áreas que já têm alguma atividade — filtro
+    # vazio não serve de nada.
+    areas = list(Area.objects.filter(ativo=True, eventos__isnull=False).distinct())
 
+    # O slug pedido, porém, é resolvido entre todas as áreas ativas. Os cartões
+    # da página inicial apontam para cá antes de a área ter evento cadastrado;
+    # nesse caso o certo é dizer "ainda não tem atividade nessa área", e não
+    # mostrar o cronograma inteiro como se o filtro não existisse.
     slug = request.GET.get("area") or ""
     area_atual = None
     if slug:
-        area_atual = areas.filter(slug=slug).first()
+        area_atual = Area.objects.filter(ativo=True, slug=slug).first()
         if area_atual:
             eventos = eventos.filter(area=area_atual)
+            if area_atual not in areas:
+                areas.append(area_atual)
+                areas.sort(key=lambda a: a.nome)
 
     return render(
         request,

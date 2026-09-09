@@ -80,14 +80,18 @@
       por
         <strong>Nome do Professor</strong>
     - Inscrição aberta: no <article>, acrescente o atributo  data-aberto
-      e troque o bloco .evento__acao por:
-        <p class="evento__acao">
-          <a class="botao botao--acao" href="LINK-DO-SUAP" target="_blank" rel="noopener">
-            Inscreva-se <span class="seta" aria-hidden="true">→</span>
-          </a>
-        </p>
+      e, dentro de .evento__acao, troque
+        <span class="em-breve">Inscrições em breve</span>
+      por
+        <a class="botao botao--acao" href="LINK-DO-SUAP" target="_blank" rel="noopener">
+          Inscreva-se <span class="seta" aria-hidden="true">→</span>
+        </a>
+      deixando o link "Ver horários" no lugar.
       Acrescente também <span class="selo-aberto">Inscrições abertas</span> em .evento__topo.
       O evento "IFROmatizando" abaixo serve de modelo — ele já está assim.
+    - O "?area=" de cada link é o endereço curto do curso/área, como está
+      cadastrado no /admin/. Se a área for renomeada, o slug pode mudar; um
+      slug que não existe mais simplesmente mostra o cronograma inteiro.
   -->
   <section class="secao" id="eventos">
     <div class="shell">
@@ -125,7 +129,11 @@
               <li>Roda de conversa: Profissões, Empreendedorismo e Mercado de Trabalho</li>
             </ul>
           </details>
-          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+          <p class="evento__acao">
+            <span class="em-breve">Inscrições em breve</span>
+            <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=cieec">
+              Ver horários <span class="seta" aria-hidden="true">→</span></a>
+          </p>
         </article>
 
         <!-- 2 -->
@@ -146,7 +154,11 @@
               <li>Mostras dos cursos técnicos e superiores</li>
             </ul>
           </details>
-          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+          <p class="evento__acao">
+            <span class="em-breve">Inscrições em breve</span>
+            <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=geral">
+              Ver horários <span class="seta" aria-hidden="true">→</span></a>
+          </p>
         </article>
 
         <!-- 3 -->
@@ -168,7 +180,11 @@
               <li>Visitações guiadas</li>
             </ul>
           </details>
-          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+          <p class="evento__acao">
+            <span class="em-breve">Inscrições em breve</span>
+            <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=agronomia-e-agropecuaria">
+              Ver horários <span class="seta" aria-hidden="true">→</span></a>
+          </p>
         </article>
 
         <!-- 4 -->
@@ -190,7 +206,11 @@
               <li>Visitações</li>
             </ul>
           </details>
-          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+          <p class="evento__acao">
+            <span class="em-breve">Inscrições em breve</span>
+            <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=alimentos">
+              Ver horários <span class="seta" aria-hidden="true">→</span></a>
+          </p>
         </article>
 
         <!-- 5 — modelo de evento com inscrição aberta -->
@@ -220,6 +240,8 @@
                target="_blank" rel="noopener">
               Inscreva-se <span class="seta" aria-hidden="true">→</span>
             </a>
+            <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=informatica">
+              Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
 
@@ -242,7 +264,11 @@
               <li>Visitações</li>
             </ul>
           </details>
-          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+          <p class="evento__acao">
+            <span class="em-breve">Inscrições em breve</span>
+            <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=biologia">
+              Ver horários <span class="seta" aria-hidden="true">→</span></a>
+          </p>
         </article>
 
         <!-- 7 -->
@@ -263,7 +289,11 @@
               <li>Visitações</li>
             </ul>
           </details>
-          <p class="evento__acao"><span class="em-breve">Inscrições em breve</span></p>
+          <p class="evento__acao">
+            <span class="em-breve">Inscrições em breve</span>
+            <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=medicina-veterinaria">
+              Ver horários <span class="seta" aria-hidden="true">→</span></a>
+          </p>
         </article>
 
         <aside class="eventos__aviso revela" style="--i:7">

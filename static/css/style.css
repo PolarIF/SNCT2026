@@ -709,12 +709,27 @@ a { color: inherit; }
 
 .evento__acao {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--s-xs);
+  gap: var(--s-2xs) var(--s-xs);
   margin-top: auto;
   padding-top: var(--s-sm);
   border-top: 1px solid var(--linha);
 }
+
+/* Ação secundária do cartão: leva ao cronograma daquela área. Vai para a
+   outra ponta da linha e é texto, não caixa, para não competir com o botão
+   vermelho de inscrição. */
+.botao--sutil {
+  margin-left: auto;
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--verde-700);
+}
+.botao--sutil:hover { border-bottom-color: var(--verde); background: none; }
 
 /* Sem link ainda: um estado, e não um botão morto. O círculo vazio faz par
    com o círculo cheio do selo "Inscrições abertas" — mesma gramática. */
@@ -1083,6 +1098,7 @@ a { color: inherit; }
   font-family: var(--fonte-display);
   font-size: var(--t-h3);
   font-weight: 800;
+  line-height: 1.18;
   letter-spacing: -0.014em;
   color: var(--tinta);
 }
