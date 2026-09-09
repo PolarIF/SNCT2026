@@ -817,6 +817,9 @@ a { color: inherit; }
   font-size: var(--t-xs);
   color: var(--sobre-verde-3);
 }
+/* crédito da autoria: um tom acima da letra miúda em volta, para se achar
+   sem disputar espaço com o nome da instituição */
+.rodape__credito { color: var(--sobre-verde-2); }
 
 /* --------------------------------------------------------------- 11. motion */
 
