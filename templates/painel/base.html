@@ -1,0 +1,60 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Painel{% endblock %} — SNCT IFRO Ariquemes</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#123B1C">
+<link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&family=Source+Sans+3:ital,wght@0,400..700;1,400&display=swap">
+{# style.css entra pelas variáveis de cor, fonte e espaço — o painel usa as mesmas #}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<link rel="stylesheet" href="{% static 'css/painel.css' %}">
+</head>
+<body class="painel">
+
+<header class="painel__topo">
+  <div class="painel__shell">
+    <a class="painel__marca" href="{% url 'painel:lista' %}">
+      <img src="{% static 'img/if-mark-branca.svg' %}" width="17" height="23" alt="">
+      <span>SNCT IFRO</span>
+    </a>
+
+    {% if user.is_authenticated %}
+      <div class="painel__conta">
+        {% if user.is_superuser %}
+          <a class="painel__admin" href="/admin/">Administração</a>
+        {% endif %}
+        <form method="post" action="{% url 'painel:sair' %}">
+          {% csrf_token %}
+          <button type="submit" class="painel__sair">Sair</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</header>
+
+<main class="painel__shell painel__corpo">
+  {% if messages %}
+    <ul class="avisos">
+      {% for m in messages %}
+        <li class="aviso aviso--{{ m.tags|default:'info' }}">{{ m }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% block conteudo %}{% endblock %}
+</main>
+
+<footer class="painel__rodape">
+  <div class="painel__shell">
+    <a href="{% url 'home' %}">Ver o site</a>
+    <a href="{% url 'cronograma' %}">Ver o cronograma público</a>
+  </div>
+</footer>
+
+</body>
+</html>

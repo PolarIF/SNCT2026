@@ -1,0 +1,28 @@
+{% extends "painel/base.html" %}
+
+{% block titulo %}Excluir evento{% endblock %}
+
+{% block conteudo %}
+  <div class="confirmar">
+    <h1>Excluir evento?</h1>
+
+    <p class="confirmar__pergunta">
+      Tem certeza que deseja excluir<br>
+      <strong>“{{ evento.titulo }}”</strong>?
+    </p>
+
+    <p class="confirmar__detalhe">
+      {{ evento.data|date:"d/m/Y" }} · {{ evento.horario }}
+      {% if evento.local %} · {{ evento.local }}{% endif %}<br>
+      {{ evento.area.nome }}
+    </p>
+
+    <p class="confirmar__aviso">Isso não pode ser desfeito.</p>
+
+    <form method="post" class="confirmar__acoes">
+      {% csrf_token %}
+      <a class="botao botao--linha" href="{% url 'painel:lista' %}">Cancelar</a>
+      <button type="submit" class="botao botao--apagar-cheio">Excluir evento</button>
+    </form>
+  </div>
+{% endblock %}

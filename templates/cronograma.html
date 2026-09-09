@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block titulo %}Cronograma — 23ª SNCT · IFRO Campus Ariquemes{% endblock %}
+{% block descricao %}Cronograma completo da 23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes, de 27 a 30 de outubro de 2026: dia, horário, local e curso de cada atividade.{% endblock %}
+{% block og_titulo %}Cronograma da 23ª SNCT — IFRO Campus Ariquemes{% endblock %}
+{% block og_descricao %}Todas as atividades da semana, dia por dia, com horário e local.{% endblock %}
+
+{% block conteudo %}
+
+  <section class="heroi heroi--curto">
+    <div class="shell heroi__grade">
+      <p class="rotulo rotulo--claro" style="--i:0">23ª SNCT · Campus Ariquemes</p>
+      <h1 style="--i:1">Cronograma</h1>
+      <p class="lead" style="--i:2">
+        Todas as atividades da semana, dia por dia, com horário e local. Esta
+        página é atualizada pelas coordenações — se algo mudar, muda aqui.
+      </p>
+    </div>
+  </section>
+
+  <section class="secao">
+    <div class="shell">
+
+      {% if areas %}
+        <nav class="filtros" aria-label="Filtrar por curso ou área">
+          <a class="filtro{% if not area_atual %} filtro--ativo{% endif %}"
+             href="{% url 'cronograma' %}">Tudo</a>
+          {% for a in areas %}
+            <a class="filtro{% if area_atual == a %} filtro--ativo{% endif %}"
+               href="?area={{ a.slug }}">{{ a.nome }}</a>
+          {% endfor %}
+        </nav>
+      {% endif %}
+
+      {% regroup eventos by data as dias %}
+
+      {% for dia in dias %}
+        <section class="crono-dia revela">
+          <h2 class="crono-dia__cabeca">
+            <span class="crono-dia__numero">{{ dia.grouper|date:"d" }}</span>
+            <span class="crono-dia__mes">{{ dia.grouper|date:"F" }}</span>
+            <small>{{ dia.grouper|date:"l" }}</small>
+          </h2>
+
+          <ul class="crono-lista">
+            {% for evento in dia.list %}
+              <li class="crono-item">
+                <p class="crono-item__hora">{{ evento.horario }}</p>
+                <div class="crono-item__corpo">
+                  <h3>{{ evento.titulo }}</h3>
+                  <p class="crono-item__meta">
+                    <span class="trilha">{{ evento.area.nome }}</span>
+                    {% if evento.local %}
+                      <span>{{ evento.local }}</span>
+                    {% else %}
+                      <span class="pendente">local a confirmar</span>
+                    {% endif %}
+                  </p>
+                  {% if evento.descricao %}
+                    <p class="crono-item__desc">{{ evento.descricao|linebreaksbr }}</p>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+
+      {% empty %}
+        <div class="vazio">
+          <p class="vazio__titulo">O cronograma ainda está sendo montado</p>
+          {% if area_atual %}
+            <p>Nenhuma atividade de <strong>{{ area_atual.nome }}</strong> foi
+              cadastrada ainda. <a href="{% url 'cronograma' %}">Ver todas as áreas</a>.</p>
+          {% else %}
+            <p>As coordenações estão cadastrando as atividades de cada curso.
+              Vale conferir esta página de novo mais perto de outubro.</p>
+            <p>Enquanto isso, a página inicial já mostra
+              <a href="{% url 'home' %}#eventos">o que cada evento da semana aborda</a>.</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      {% if total %}
+        <p class="crono-rodape">
+          {{ total }} atividade{{ total|pluralize }}
+          {% if area_atual %}em {{ area_atual.nome }}{% endif %}
+          · sujeito a alteração
+        </p>
+      {% endif %}
+
+    </div>
+  </section>
+
+{% endblock %}

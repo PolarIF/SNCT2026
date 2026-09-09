@@ -83,9 +83,13 @@
   /* ----------------------------------------------------------------------
    * 4. Seção corrente marcada no menu
    * -------------------------------------------------------------------- */
-  var itens = Array.prototype.slice.call(
-    document.querySelectorAll('.menu a[href^="#"]')
-  );
+  /* Só os itens que apontam para uma âncora desta página. Os links do menu
+     são absolutos ("/#eventos"), então o filtro é pelo hash, e não pelo
+     começo do href. */
+  var itens = Array.prototype.slice.call(document.querySelectorAll(".menu a"))
+    .filter(function (a) {
+      return a.hash && document.getElementById(a.hash.slice(1));
+    });
 
   if (itens.length && "IntersectionObserver" in window) {
     var porId = {};

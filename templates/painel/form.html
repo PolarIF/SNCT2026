@@ -1,0 +1,46 @@
+{% extends "painel/base.html" %}
+
+{% block titulo %}{{ titulo_pagina }}{% endblock %}
+
+{% block conteudo %}
+  <p class="voltar"><a href="{% url 'painel:lista' %}">← Voltar para o cronograma</a></p>
+
+  <h1>{{ titulo_pagina }}</h1>
+
+  <form method="post" class="formulario" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <p class="aviso aviso--error">{{ form.non_field_errors|join:" " }}</p>
+    {% endif %}
+
+    {% if form.area_unica %}
+      <p class="campo-fixo">
+        Curso/área: <strong>{{ form.area_unica.nome }}</strong>
+      </p>
+      {{ form.area }}
+    {% endif %}
+
+    {% for campo in form.visible_fields %}
+      <div class="campo{% if campo.errors %} campo--erro{% endif %}">
+        <label for="{{ campo.id_for_label }}">
+          {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
+        </label>
+        {{ campo }}
+        {% if campo.help_text and not campo.errors %}
+          <p class="campo__ajuda">{{ campo.help_text }}</p>
+        {% endif %}
+        {% for erro in campo.errors %}
+          <p class="campo__erro">{{ erro }}</p>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <div class="formulario__acoes">
+      <button type="submit" class="botao botao--acao">
+        {% if evento %}Salvar alterações{% else %}Salvar evento{% endif %}
+      </button>
+      <a class="botao botao--linha" href="{% url 'painel:lista' %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

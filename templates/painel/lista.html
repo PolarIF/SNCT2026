@@ -1,0 +1,90 @@
+{% extends "painel/base.html" %}
+
+{% block titulo %}Meu cronograma{% endblock %}
+
+{% block conteudo %}
+
+  <div class="painel__cabeca">
+    <div>
+      <h1>Meu cronograma</h1>
+      <p class="painel__quem">
+        {% if user.is_superuser %}
+          Você é administrador: vê e edita os eventos de todos os cursos.
+        {% else %}
+          Olá, {{ user.get_full_name|default:user.username }}.
+          {% if varias_areas %}
+            Você cuida de: {% for a in areas %}<strong>{{ a.nome }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
+          {% else %}
+            Você cuida de <strong>{{ areas.0.nome }}</strong>.
+          {% endif %}
+        {% endif %}
+      </p>
+    </div>
+
+    {% if areas %}
+      <a class="botao botao--acao" href="{% url 'painel:novo' %}">+ Adicionar evento</a>
+    {% endif %}
+  </div>
+
+  {% if not areas %}
+    <div class="vazio">
+      <p class="vazio__titulo">Sua conta ainda não tem curso/área</p>
+      <p>Peça para a organização da SNCT ligar a sua conta a um curso ou área.</p>
+    </div>
+
+  {% else %}
+
+    {% regroup eventos by data as dias %}
+
+    {% for dia in dias %}
+      <section class="grupo{% if dia.grouper < hoje %} grupo--passado{% endif %}">
+        <h2 class="grupo__data">
+          {{ dia.grouper|date:"d/m" }}
+          <small>{{ dia.grouper|date:"l" }}{% if dia.grouper < hoje %} · já aconteceu{% endif %}</small>
+        </h2>
+
+        <ul class="cartoes">
+          {% for evento in dia.list %}
+            <li class="cartao">
+              <p class="cartao__hora">{{ evento.horario }}</p>
+
+              <h3 class="cartao__titulo">{{ evento.titulo }}</h3>
+
+              <p class="cartao__meta">
+                {% if varias_areas or user.is_superuser %}
+                  <span class="trilha">{{ evento.area.nome }}</span>
+                {% endif %}
+                {% if evento.local %}
+                  <span>{{ evento.local }}</span>
+                {% else %}
+                  <span class="pendente">local a confirmar</span>
+                {% endif %}
+              </p>
+
+              {% if evento.descricao %}
+                <p class="cartao__desc">{{ evento.descricao|truncatechars:180 }}</p>
+              {% endif %}
+
+              <p class="cartao__acoes">
+                <a class="botao botao--linha" href="{% url 'painel:editar' evento.pk %}">Editar</a>
+                <a class="botao botao--apagar" href="{% url 'painel:excluir' evento.pk %}">Excluir</a>
+              </p>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+    {% empty %}
+      <div class="vazio">
+        <p class="vazio__titulo">Nenhum evento cadastrado ainda</p>
+        <p>
+          Clique em <strong>Adicionar evento</strong> para cadastrar a primeira
+          atividade. Ela aparece no cronograma público na mesma hora.
+        </p>
+        <p><a class="botao botao--acao" href="{% url 'painel:novo' %}">+ Adicionar evento</a></p>
+      </div>
+    {% endfor %}
+
+  {% endif %}
+
+{% endblock %}

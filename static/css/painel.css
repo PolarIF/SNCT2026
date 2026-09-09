@@ -1,0 +1,329 @@
+@charset "utf-8";
+
+/* ==========================================================================
+   Painel das coordenações.
+   Herda as variáveis de style.css (cor, fonte, espaço, raio). Aqui só há o
+   que o painel precisa: uma coluna, texto grande, botões grandes.
+   A regra de ouro desta folha é: nada de sutileza. Quem usa isso vai
+   cadastrar dois eventos por ano, no celular, com pressa.
+   ========================================================================== */
+
+.painel { background: var(--papel-2); }
+
+.painel__shell {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 1.75rem);
+}
+
+/* ------------------------------------------------------------------- topo */
+
+.painel__topo {
+  background: var(--verde-900);
+  color: var(--sobre-verde);
+  padding-block: var(--s-xs);
+}
+.painel__topo .painel__shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-sm);
+  min-height: 3rem;
+}
+
+.painel__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2xs);
+  font-family: var(--fonte-display);
+  font-size: var(--t-sm);
+  font-weight: 800;
+  font-stretch: 87%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  text-decoration: none;
+}
+.painel__marca img { height: 1.4375rem; width: auto; }
+
+.painel__conta { display: flex; align-items: center; gap: var(--s-sm); }
+
+.painel__admin,
+.painel__sair {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 var(--t-sm)/1 var(--fonte-display);
+  color: var(--sobre-verde-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+.painel__admin:hover,
+.painel__sair:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+
+.painel__corpo { padding-block: var(--s-lg) var(--s-2xl); }
+
+/* --------------------------------------------------------------- cabeçalho */
+
+.painel__cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--s-sm);
+  margin-bottom: var(--s-lg);
+}
+.painel h1 {
+  font-size: clamp(1.625rem, 1.4rem + 1vw, 2.125rem);
+  line-height: 1.1;
+}
+.painel__quem {
+  margin-top: var(--s-3xs);
+  font-size: var(--t-sm);
+  color: var(--tinta-2);
+  max-width: 52ch;
+}
+.painel__quem strong { color: var(--tinta); font-weight: 600; }
+
+/* ----------------------------------------------------------------- avisos */
+
+.avisos { display: grid; gap: var(--s-2xs); margin-bottom: var(--s-md); }
+.aviso {
+  padding: var(--s-xs) var(--s-sm);
+  border-radius: var(--r-md);
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+.aviso--success {
+  background: var(--verde-100);
+  border: 1px solid var(--verde-200);
+  color: var(--verde-800);
+}
+.aviso--error,
+.aviso--warning {
+  background: oklch(95% 0.03 26);
+  border: 1px solid oklch(85% 0.07 26);
+  color: oklch(40% 0.15 26);
+}
+.aviso--info {
+  background: var(--papel-3);
+  border: 1px solid var(--linha);
+  color: var(--tinta-2);
+}
+
+/* ------------------------------------------------------- lista de eventos */
+
+.grupo + .grupo { margin-top: var(--s-lg); }
+.grupo--passado { opacity: 0.62; }
+
+.grupo__data {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2xs) var(--s-xs);
+  padding-bottom: var(--s-2xs);
+  margin-bottom: var(--s-xs);
+  border-bottom: 2px solid var(--verde);
+  font-size: 1.375rem;
+  font-variant-numeric: tabular-nums;
+}
+.grupo__data small {
+  font-family: var(--fonte-display);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  font-stretch: 87%;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+.grupo--passado .grupo__data { border-bottom-color: var(--linha-forte); }
+
+.cartoes { display: grid; gap: var(--s-xs); }
+
+.cartao {
+  display: grid;
+  gap: var(--s-3xs);
+  padding: var(--s-sm) var(--s-md);
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: var(--r-lg);
+}
+.cartao__hora {
+  font-family: var(--fonte-display);
+  font-size: var(--t-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--verde-700);
+}
+.cartao__titulo { font-size: 1.1875rem; line-height: 1.25; }
+.cartao__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2xs) var(--s-xs);
+  font-size: var(--t-sm);
+  color: var(--tinta-2);
+}
+.cartao__desc {
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--tinta-2);
+  max-width: 58ch;
+}
+.cartao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2xs);
+  margin-top: var(--s-2xs);
+}
+
+/* Excluir é vermelho só na confirmação. Na lista fica em contorno, para não
+   virar o botão mais chamativo da tela. */
+.botao--apagar {
+  border-color: var(--linha-forte);
+  color: var(--tinta-2);
+  background: transparent;
+}
+.botao--apagar:hover { border-color: var(--vermelho); color: var(--vermelho-600); }
+
+.botao--apagar-cheio { background: var(--vermelho); color: #fff; }
+.botao--apagar-cheio:hover { background: var(--vermelho-600); }
+
+/* -------------------------------------------------------------- formulário */
+
+.voltar { margin-bottom: var(--s-sm); font-size: var(--t-sm); }
+.voltar a { color: var(--verde-700); text-decoration: none; font-weight: 600; }
+.voltar a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.formulario {
+  display: grid;
+  gap: var(--s-md);
+  margin-top: var(--s-md);
+  padding: var(--s-md);
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: var(--r-lg);
+}
+
+.campo { display: grid; gap: var(--s-3xs); }
+.campo label {
+  font-family: var(--fonte-display);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--tinta);
+}
+.campo__opcional {
+  font-weight: 500;
+  color: var(--tinta-3);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  width: 100%;
+  padding: 0.6875rem 0.75rem;
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-sm);
+  background: #fff;
+  font-family: var(--fonte-texto);
+  font-size: 1.0625rem;      /* 17px: abaixo de 16px o iPhone dá zoom no foco */
+  line-height: 1.4;
+  color: var(--tinta);
+}
+.campo textarea { resize: vertical; min-height: 5.5rem; }
+.campo input:focus-visible,
+.campo select:focus-visible,
+.campo textarea:focus-visible {
+  outline: 3px solid var(--verde);
+  outline-offset: 1px;
+  border-color: var(--verde);
+}
+
+.campo__ajuda { font-size: var(--t-sm); color: var(--tinta-3); }
+.campo__erro { font-size: var(--t-sm); font-weight: 600; color: var(--vermelho-600); }
+.campo--erro input,
+.campo--erro select,
+.campo--erro textarea { border-color: var(--vermelho); }
+
+.campo-fixo {
+  padding: var(--s-xs) var(--s-sm);
+  background: var(--verde-100);
+  border-radius: var(--r-md);
+  font-size: var(--t-sm);
+  color: var(--verde-800);
+}
+
+.formulario__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2xs);
+  padding-top: var(--s-2xs);
+  border-top: 1px solid var(--linha);
+}
+
+/* ------------------------------------------------------------------ entrar */
+
+.entrar { max-width: 24rem; margin-inline: auto; padding-top: var(--s-lg); }
+.entrar h1 { margin-bottom: var(--s-2xs); }
+.entrar__ajuda { font-size: var(--t-sm); color: var(--tinta-2); }
+.entrar__ajuda--fim { margin-top: var(--s-md); text-align: center; color: var(--tinta-3); }
+.entrar .formulario__acoes,
+.entrar .botao--acao { width: 100%; justify-content: center; }
+
+/* ------------------------------------------------------------- confirmação */
+
+.confirmar {
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: var(--s-lg);
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: var(--r-lg);
+  text-align: center;
+}
+.confirmar__pergunta { margin-top: var(--s-sm); font-size: var(--t-lead); line-height: 1.45; }
+.confirmar__detalhe {
+  margin-top: var(--s-xs);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--tinta-2);
+}
+.confirmar__aviso {
+  margin-top: var(--s-sm);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--vermelho-600);
+}
+.confirmar__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-2xs);
+  margin-top: var(--s-md);
+}
+
+/* ---------------------------------------------------------------- rodapé */
+
+.painel__rodape {
+  padding-block: var(--s-md);
+  border-top: 1px solid var(--linha);
+  font-size: var(--t-sm);
+}
+.painel__rodape .painel__shell { display: flex; flex-wrap: wrap; gap: var(--s-md); }
+.painel__rodape a { color: var(--tinta-2); text-decoration: none; }
+.painel__rodape a:hover { color: var(--verde-700); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------------------------------------------------------------- celular */
+
+@media (max-width: 32rem) {
+  .painel__cabeca { align-items: stretch; }
+  .painel__cabeca .botao { width: 100%; justify-content: center; }
+  .cartao__acoes .botao { flex: 1; justify-content: center; }
+  .formulario__acoes .botao { width: 100%; justify-content: center; }
+  .confirmar { padding: var(--s-md); }
+  .confirmar__acoes { flex-direction: column-reverse; }
+  .confirmar__acoes .botao { width: 100%; justify-content: center; }
+}

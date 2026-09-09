@@ -1,0 +1,18 @@
+# ambiente
+.venv/
+.env
+__pycache__/
+*.py[cod]
+
+# banco de desenvolvimento
+db.sqlite3
+db.sqlite3-journal
+
+# estáticos coletados (gerados no deploy)
+staticfiles/
+
+# sistema / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

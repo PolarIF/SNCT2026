@@ -943,3 +943,153 @@ a { color: inherit; }
   .rodape { background: #fff; color: #000; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.75em; word-break: break-all; }
 }
+
+/* ==========================================================================
+   14. cronograma público
+   Reaproveita os mesmos tokens, o mesmo módulo e a mesma gramática de
+   estado ("a confirmar") do resto da página.
+   ========================================================================== */
+
+/* link do bloco de dias para o cronograma completo */
+.dias__link { margin-top: var(--s-2xs); }
+.dias__link a {
+  font-family: var(--fonte-display);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--verde-700);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 140ms var(--saida);
+}
+.dias__link a:hover { border-bottom-color: var(--verde); }
+.dias__link .seta { display: inline-block; transition: transform 160ms var(--saida); }
+.dias__link a:hover .seta { transform: translateX(3px); }
+
+/* cabeçalho curto das páginas internas: o herói, sem o peso do herói */
+.heroi--curto { padding-block: clamp(2.5rem, 5vw, 3.75rem) clamp(2rem, 4vw, 3rem); }
+.heroi--curto::before { display: none; }
+.heroi--curto h1 {
+  font-size: clamp(2rem, 1.45rem + 2.4vw, 3rem);
+  color: #fff;
+  max-width: none;
+}
+/* depois de um cabeçalho curto, o respiro da seção de conteúdo é menor */
+.heroi--curto + .secao { padding-top: clamp(2rem, 4vw, 3rem); }
+
+/* filtros por curso/área */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2xs);
+  margin-bottom: var(--s-xl);
+}
+.filtro {
+  padding: 0.4375rem 0.8125rem;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  background: #fff;
+  font-family: var(--fonte-display);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--tinta-2);
+  text-decoration: none;
+  transition: border-color 140ms var(--saida), color 140ms var(--saida),
+              background-color 140ms var(--saida);
+}
+.filtro:hover { border-color: var(--linha-forte); color: var(--tinta); }
+.filtro--ativo {
+  background: var(--verde-900);
+  border-color: var(--verde-900);
+  color: var(--sobre-verde);
+}
+.filtro--ativo:hover { color: #fff; }
+
+/* um dia do cronograma */
+.crono-dia + .crono-dia { margin-top: var(--s-xl); }
+
+.crono-dia__cabeca {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2xs);
+  padding-bottom: var(--s-xs);
+  border-bottom: 2px solid var(--verde);
+  font-size: var(--t-h3);
+  letter-spacing: -0.02em;
+}
+.crono-dia__numero { font-variant-numeric: tabular-nums; }
+.crono-dia__mes { font-weight: 500; color: var(--tinta-2); }
+.crono-dia__cabeca small {
+  margin-left: auto;
+  font-family: var(--fonte-display);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  font-stretch: 87%;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+
+.crono-lista { display: grid; }
+.crono-item {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: var(--s-md);
+  padding-block: var(--s-md);
+  border-bottom: 1px solid var(--linha);
+}
+.crono-item__hora {
+  font-family: var(--fonte-display);
+  font-size: var(--t-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--verde-700);
+  line-height: 1.4;
+}
+.crono-item__corpo { display: grid; gap: var(--s-2xs); min-width: 0; }
+.crono-item h3 { font-size: 1.25rem; }
+.crono-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2xs) var(--s-xs);
+  font-size: var(--t-sm);
+  color: var(--tinta-2);
+}
+.crono-item__desc {
+  max-width: 66ch;
+  font-size: var(--t-sm);
+  line-height: 1.55;
+  color: var(--tinta-2);
+}
+
+.crono-rodape {
+  margin-top: var(--s-lg);
+  font-size: var(--t-sm);
+  color: var(--tinta-3);
+}
+
+/* estado vazio: explica o que está acontecendo, não só que não há nada */
+.vazio {
+  display: grid;
+  gap: var(--s-xs);
+  max-width: 52ch;
+  padding: var(--s-lg);
+  background: var(--verde-100);
+  border: 1px solid var(--verde-200);
+  border-radius: var(--r-lg);
+  color: var(--verde-800);
+}
+.vazio__titulo {
+  font-family: var(--fonte-display);
+  font-size: var(--t-h3);
+  font-weight: 800;
+  letter-spacing: -0.014em;
+  color: var(--tinta);
+}
+.vazio a { color: var(--verde-700); text-underline-offset: 2px; }
+
+@media (max-width: 40rem) {
+  .crono-item { grid-template-columns: 1fr; gap: var(--s-2xs); }
+  .crono-dia__cabeca { flex-wrap: wrap; }
+  .crono-dia__cabeca small { margin-left: 0; width: 100%; }
+}

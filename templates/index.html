@@ -1,56 +1,7 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends "base.html" %}
+{% load static %}
 
-<title>23ª Semana Nacional de Ciência e Tecnologia — IFRO Campus Ariquemes</title>
-<meta name="description" content="23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes, de 27 a 30 de outubro de 2026. Tema: Ciência Delas. Programação, eventos e inscrições.">
-<link rel="canonical" href="https://snctifroari.online/">
-<meta name="author" content="Instituto Federal de Rondônia — Campus Ariquemes">
-<meta name="theme-color" content="#123B1C">
-
-<meta property="og:type" content="website">
-<meta property="og:locale" content="pt_BR">
-<meta property="og:site_name" content="SNCT — IFRO Campus Ariquemes">
-<meta property="og:url" content="https://snctifroari.online/">
-<meta property="og:title" content="23ª Semana Nacional de Ciência e Tecnologia — IFRO Campus Ariquemes">
-<meta property="og:description" content="De 27 a 30 de outubro de 2026. Tema: Ciência Delas. Feiras, oficinas, mostras e seminários abertos à comunidade.">
-<meta property="og:image" content="https://snctifroari.online/assets/img/og-snct-ifro-ariquemes.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="23ª Semana Nacional de Ciência e Tecnologia, tema Ciência Delas, IFRO Campus Ariquemes, 27 a 30 de outubro de 2026.">
-<meta name="twitter:card" content="summary_large_image">
-
-<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&family=Source+Sans+3:ital,wght@0,400..700;1,400&display=swap">
-<link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-
-<a class="pular" href="#conteudo">Ir para o conteúdo</a>
-
-<header class="topo" id="topo">
-  <div class="shell topo__barra">
-    <a class="marca" href="#topo" aria-label="23ª SNCT — IFRO Campus Ariquemes, início da página">
-      <img class="marca__logo" src="assets/img/ifro-lockup.svg" width="205" height="65"
-           alt="Instituto Federal de Rondônia — Campus Ariquemes">
-      <span class="marca__sigla">23ª <b>SNCT</b></span>
-    </a>
-
-    <nav class="menu" aria-label="Seções da página">
-      <a href="#programacao">Programação</a>
-      <a href="#eventos">Eventos</a>
-      <a href="#sobre">Sobre</a>
-    </nav>
-  </div>
-</header>
-
-<main id="conteudo">
+{% block conteudo %}
 
   <!-- ============================================================ herói -->
   <section class="heroi">
@@ -83,7 +34,7 @@
     </div>
 
     <div class="shell heroi__rodape">
-      <img src="assets/img/ifro-horizontal-branca.svg" width="275" height="60"
+      <img src="{% static 'img/ifro-horizontal-branca.svg' %}" width="275" height="60"
            alt="Instituto Federal de Rondônia — Campus Ariquemes">
 
       <!-- preenchida pelo JS a partir de data-inicio/data-fim; sem JS, não aparece -->
@@ -98,6 +49,10 @@
       <div class="dias__cabeca">
         <p class="rotulo">Programação geral</p>
         <h2>Como a semana se divide</h2>
+        <p class="dias__link">
+          <a href="{% url 'cronograma' %}">Ver o cronograma completo, dia por dia
+            <span class="seta" aria-hidden="true">→</span></a>
+        </p>
       </div>
 
       <ul class="dias__lista">
@@ -372,36 +327,4 @@
     </div>
   </section>
 
-</main>
-
-<footer class="rodape">
-  <div class="shell">
-    <div class="rodape__grade">
-      <div>
-        <img src="assets/img/ifro-lockup-branca.svg" width="205" height="65"
-             alt="Instituto Federal de Rondônia — Campus Ariquemes">
-        <p>
-          23ª Semana Nacional de Ciência e Tecnologia · 27 a 30 de outubro de 2026 ·
-          Campus Ariquemes
-        </p>
-      </div>
-
-      <nav class="rodape__links" aria-label="Links">
-        <a href="#programacao">Programação</a>
-        <a href="#eventos">Eventos e inscrições</a>
-        <a href="#sobre">Sobre a semana</a>
-        <a href="https://portal.ifro.edu.br/ariquemes" target="_blank" rel="noopener">Portal do campus</a>
-      </nav>
-    </div>
-
-    <p class="rodape__base">
-      <span>Instituto Federal de Educação, Ciência e Tecnologia de Rondônia</span>
-      <span>snctifroari.online</span>
-      <span class="rodape__credito">Feito por Júlio Sabaini</span>
-    </p>
-  </div>
-</footer>
-
-<script src="assets/js/site.js" defer></script>
-</body>
-</html>
+{% endblock %}
