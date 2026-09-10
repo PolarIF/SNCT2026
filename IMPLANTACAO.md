@@ -103,10 +103,8 @@ no `.env` do servidor.
 
 O resto é cadastrado pelo site: o administrador cria as contas das
 coordenações em `/admin/` e cada coordenação cadastra os próprios eventos e
-abre a própria inscrição em `/painel/`.
-
-O restante — criar contas para as coordenações, cadastrar cursos/áreas, abrir
-as inscrições — está explicado no `README.md`.
+abre a própria inscrição em `/painel/`. O passo a passo de cada uma dessas
+tarefas está no `README.md`.
 
 ---
 
