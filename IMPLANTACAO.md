@@ -48,6 +48,11 @@ seguintes são rápidas.
 | `POSTGRES_PASSWORD` | senha do banco; só é usada entre os containers |
 | `ADMIN_USUARIO` / `ADMIN_SENHA` | a primeira conta de administrador do site |
 
+Nenhum desses campos é opcional. O compose se recusa a subir com
+`SECRET_KEY`, `POSTGRES_PASSWORD`, `ADMIN_SENHA`, `DOMINIO` ou
+`EMAIL_CERTIFICADO` em branco, e diz qual está faltando — é melhor não subir
+do que subir um site em que ninguém consegue entrar.
+
 Para gerar a `SECRET_KEY` e a senha do banco:
 
 ```bash
@@ -87,6 +92,18 @@ Passe estas informações para a organização da SNCT:
 **Primeira coisa a fazer:** entrar em `/admin/` com o usuário e a senha do
 `ADMIN_USUARIO`/`ADMIN_SENHA` e **trocar a senha**. Ela está escrita em texto
 no `.env` do servidor.
+
+### O que já existe no banco na primeira subida
+
+- **uma conta**, a do `ADMIN_USUARIO`, superusuário;
+- **sete cursos/áreas**: Geral, CIEEC, Agronomia e Agropecuária, Alimentos,
+  Informática, Biologia e Medicina Veterinária — todas ativas, todas com a
+  inscrição fechada e sem link;
+- **nenhum evento**, e nenhuma conta de coordenação.
+
+O resto é cadastrado pelo site: o administrador cria as contas das
+coordenações em `/admin/` e cada coordenação cadastra os próprios eventos e
+abre a própria inscrição em `/painel/`.
 
 O restante — criar contas para as coordenações, cadastrar cursos/áreas, abrir
 as inscrições — está explicado no `README.md`.

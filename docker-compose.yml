@@ -20,6 +20,11 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://snct:${POSTGRES_PASSWORD}@db:5432/snct
+      # Sem estas duas o banco sobe sem nenhum usuário e ninguém consegue
+      # entrar — e quem opera o servidor não é quem administra o site. Melhor
+      # recusar a subir do que subir um site em que ninguém entra.
+      SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY no .env}
+      ADMIN_SENHA: ${ADMIN_SENHA:?defina ADMIN_SENHA no .env}
     volumes:
       # Só é usado se a instalação optar por SQLite em vez de PostgreSQL.
       - dados:/dados
