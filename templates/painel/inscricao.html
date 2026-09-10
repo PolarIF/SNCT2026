@@ -1,0 +1,43 @@
+{% extends "painel/base.html" %}
+
+{% block titulo %}Inscrições — {{ area.nome }}{% endblock %}
+
+{% block conteudo %}
+  <p class="voltar"><a href="{% url 'painel:lista' %}">← Voltar para o cronograma</a></p>
+
+  <h1>Inscrições</h1>
+  <p class="painel__quem">Curso/área: <strong>{{ area.nome }}</strong></p>
+
+  <form method="post" class="formulario" novalidate>
+    {% csrf_token %}
+
+    <div class="campo campo--caixa{% if form.inscricoes_abertas.errors %} campo--erro{% endif %}">
+      <label for="{{ form.inscricoes_abertas.id_for_label }}">
+        {{ form.inscricoes_abertas }}
+        {{ form.inscricoes_abertas.label }}
+      </label>
+      <p class="campo__ajuda">{{ form.inscricoes_abertas.help_text }}</p>
+    </div>
+
+    <div class="campo{% if form.link_inscricao.errors %} campo--erro{% endif %}">
+      <label for="{{ form.link_inscricao.id_for_label }}">
+        {{ form.link_inscricao.label }} <span class="campo__opcional">(opcional)</span>
+      </label>
+      {{ form.link_inscricao }}
+      {% if form.link_inscricao.errors %}
+        {% for erro in form.link_inscricao.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
+      {% else %}
+        <p class="campo__ajuda">{{ form.link_inscricao.help_text }}</p>
+      {% endif %}
+    </div>
+
+    <p class="campo-fixo">
+      Como está agora no site: {{ area.situacao_inscricao }}
+    </p>
+
+    <div class="formulario__acoes">
+      <button type="submit" class="botao botao--acao">Salvar</button>
+      <a class="botao botao--linha" href="{% url 'painel:lista' %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

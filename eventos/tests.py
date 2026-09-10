@@ -186,6 +186,108 @@ class InscricaoNaHome(Base):
         self.assertNotContains(r, "inscricao/1/999")
 
 
+class InscricaoPeloPainel(Base):
+    """Quem abre e fecha a inscrição é a coordenação, no painel."""
+
+    def url(self, area):
+        return reverse("painel:inscricao", args=[area.slug])
+
+    def test_coordenacao_abre_a_inscricao_da_propria_area(self):
+        self.entrar("coord_ads")
+        r = self.client.post(
+            self.url(self.ads),
+            {"inscricoes_abertas": "on",
+             "link_inscricao": "https://suap.ifro.edu.br/eventos/inscricao/1/777/"},
+        )
+        self.assertRedirects(r, reverse("painel:lista"))
+
+        self.ads.refresh_from_db()
+        self.assertTrue(self.ads.inscricoes_abertas)
+        self.assertTrue(self.ads.mostra_botao_inscricao)
+
+    def test_coordenacao_fecha_a_inscricao(self):
+        self.ads.inscricoes_abertas = True
+        self.ads.link_inscricao = "https://suap.ifro.edu.br/eventos/inscricao/1/777/"
+        self.ads.save()
+
+        self.entrar("coord_ads")
+        self.client.post(self.url(self.ads), {"link_inscricao": self.ads.link_inscricao})
+
+        self.ads.refresh_from_db()
+        self.assertFalse(self.ads.inscricoes_abertas)
+
+    def test_link_sem_esquema_vira_https(self):
+        self.entrar("coord_ads")
+        self.client.post(
+            self.url(self.ads),
+            {"inscricoes_abertas": "on", "link_inscricao": "suap.ifro.edu.br/eventos/inscricao/1/9/"},
+        )
+        self.ads.refresh_from_db()
+        self.assertTrue(self.ads.link_inscricao.startswith("https://"))
+
+    def test_link_invalido_e_recusado(self):
+        self.entrar("coord_ads")
+        r = self.client.post(self.url(self.ads), {"link_inscricao": "isso não é um link"})
+        self.assertEqual(r.status_code, 200)
+        self.ads.refresh_from_db()
+        self.assertEqual(self.ads.link_inscricao, "")
+
+    # ---------------------------------------------------------- o que não pode
+
+    def test_nao_abre_a_tela_de_area_alheia(self):
+        self.entrar("coord_ads")
+        self.assertEqual(self.client.get(self.url(self.info)).status_code, 404)
+
+    def test_nao_altera_area_alheia_por_post_direto(self):
+        self.entrar("coord_ads")
+        r = self.client.post(
+            self.url(self.info),
+            {"inscricoes_abertas": "on", "link_inscricao": "https://exemplo.invalid/x/"},
+        )
+        self.assertEqual(r.status_code, 404)
+        self.info.refresh_from_db()
+        self.assertFalse(self.info.inscricoes_abertas)
+        self.assertEqual(self.info.link_inscricao, "")
+
+    def test_exige_login(self):
+        self.assertEqual(self.client.get(self.url(self.ads)).status_code, 302)
+
+    def test_administrador_altera_qualquer_area(self):
+        self.entrar("admin")
+        r = self.client.post(
+            self.url(self.eletro),
+            {"inscricoes_abertas": "on",
+             "link_inscricao": "https://suap.ifro.edu.br/eventos/inscricao/1/555/"},
+        )
+        self.assertRedirects(r, reverse("painel:lista"))
+        self.eletro.refresh_from_db()
+        self.assertTrue(self.eletro.mostra_botao_inscricao)
+
+    def test_a_lista_do_painel_mostra_o_estado_e_o_link_de_alterar(self):
+        self.entrar("coord_ads")
+        r = self.client.get(reverse("painel:lista"))
+        self.assertContains(r, "Inscrições em breve")
+        self.assertContains(r, self.url(self.ads))
+        self.assertNotContains(r, self.url(self.info))
+
+    def test_abrir_no_painel_muda_a_pagina_inicial(self):
+        """O ciclo inteiro: coordenação abre no painel, visitante vê o botão."""
+        cieec = Area.objects.create(nome="CIEEC", slug="cieec")
+        cieec.gestores.add(self.coord_ads)
+
+        self.entrar("coord_ads")
+        self.client.post(
+            reverse("painel:inscricao", args=["cieec"]),
+            {"inscricoes_abertas": "on",
+             "link_inscricao": "https://suap.ifro.edu.br/eventos/inscricao/1/321/"},
+        )
+        self.client.logout()
+
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "inscricao/1/321/")
+        self.assertContains(r, "Inscreva-se")
+
+
 class Saude(Base):
     def test_responde_ok(self):
         r = self.client.get(reverse("saude"))

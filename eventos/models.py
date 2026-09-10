@@ -65,6 +65,19 @@ class Area(models.Model):
         """Só há botão quando as inscrições estão abertas e há para onde ir."""
         return bool(self.inscricoes_abertas and self.link_inscricao)
 
+    @property
+    def situacao_inscricao(self):
+        """O que o cartão desta área mostra hoje na página inicial.
+
+        Fica no modelo porque o /admin/ e o painel dizem a mesma coisa, e
+        dizer diferente seria pior que não dizer.
+        """
+        if self.mostra_botao_inscricao:
+            return "botão “Inscreva-se”"
+        if self.inscricoes_abertas:
+            return "marcada como aberta, mas sem link — nenhum botão aparece"
+        return "“Inscrições em breve”"
+
 
 class EventoQuerySet(models.QuerySet):
     def publicos(self):

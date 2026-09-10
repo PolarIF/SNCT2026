@@ -327,3 +327,63 @@
   .confirmar__acoes { flex-direction: column-reverse; }
   .confirmar__acoes .botao { width: 100%; justify-content: center; }
 }
+
+/* ---------------------------------------------------------- inscrições */
+
+/* Fica acima do cronograma porque é o que a coordenação vem mexer nas duas
+   ou três vezes em que abre o painel fora da rotina de cadastrar evento. */
+.inscricoes {
+  margin-bottom: var(--s-lg);
+  padding: var(--s-sm) var(--s-md);
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: var(--r-lg);
+}
+.inscricoes__titulo {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  font-stretch: 87%;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+.inscricoes ul { display: grid; }
+
+.inscricao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2xs) var(--s-sm);
+  padding-block: var(--s-xs);
+}
+.inscricao + .inscricao { border-top: 1px solid var(--linha); }
+
+.inscricao__area {
+  font-family: var(--fonte-display);
+  font-size: var(--t-base);
+  font-weight: 700;
+}
+.inscricao__estado { font-size: var(--t-sm); color: var(--tinta-2); }
+.inscricao__aberta { color: var(--verde-700); }
+.inscricao__atencao { color: var(--vermelho-600); }
+
+/* caixa de marcar: o rótulo inteiro é área de clique */
+.campo--caixa label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2xs);
+  cursor: pointer;
+}
+.campo--caixa input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  accent-color: var(--verde-700);
+  cursor: pointer;
+}
+
+@media (max-width: 32rem) {
+  .inscricao { align-items: stretch; }
+  .inscricao .botao { width: 100%; justify-content: center; }
+}

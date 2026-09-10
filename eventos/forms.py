@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Evento, areas_do_usuario
+from .models import Area, Evento, areas_do_usuario
 
 
 class EventoForm(forms.ModelForm):
@@ -40,3 +40,30 @@ class EventoForm(forms.ModelForm):
             campo_area.widget = forms.HiddenInput()
         else:
             campo_area.empty_label = "Escolha o curso/área"
+
+
+class InscricaoDaAreaForm(forms.ModelForm):
+    """Os dois campos da inscrição, para a coordenação mexer pelo painel.
+
+    Quem pode mexer em qual área é decidido na view, não aqui: este formulário
+    sempre recebe uma área que já passou pela checagem de permissão.
+    """
+
+    link_inscricao = forms.URLField(
+        label="Link de inscrição",
+        required=False,
+        # Sem isso, colar "suap.ifro.edu.br/..." sem o "https://" viraria http.
+        assume_scheme="https",
+        widget=forms.URLInput(
+            attrs={"placeholder": "https://suap.ifro.edu.br/eventos/inscricao/1/0000/"}
+        ),
+        help_text="Cole aqui o endereço da inscrição no SUAP.",
+    )
+
+    class Meta:
+        model = Area
+        fields = ["inscricoes_abertas", "link_inscricao"]
+        labels = {"inscricoes_abertas": "Inscrições abertas"}
+        help_texts = {
+            "inscricoes_abertas": "Desmarcado, o site mostra “Inscrições em breve”.",
+        }

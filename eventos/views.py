@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .forms import EventoForm
+from .forms import EventoForm, InscricaoDaAreaForm
 from .models import Area, Evento, areas_do_usuario
 
 # ---------------------------------------------------------------- site público
@@ -102,6 +102,31 @@ def lista(request):
             "hoje": timezone.localdate(),
         },
     )
+
+
+@login_required
+def inscricao(request, slug):
+    """Abre, fecha e troca o link de inscrição de um curso/área.
+
+    A permissão é a mesma dos eventos: buscar pela queryset de
+    areas_do_usuario faz uma área alheia devolver 404, tanto no GET quanto
+    no POST.
+    """
+    area = get_object_or_404(areas_do_usuario(request.user), slug=slug)
+
+    if request.method == "POST":
+        form = InscricaoDaAreaForm(request.POST, instance=area)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f"Inscrições de {area.nome}: o site passa a mostrar {area.situacao_inscricao}.",
+            )
+            return redirect("painel:lista")
+    else:
+        form = InscricaoDaAreaForm(instance=area)
+
+    return render(request, "painel/inscricao.html", {"form": form, "area": area})
 
 
 @login_required

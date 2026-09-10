@@ -42,11 +42,7 @@ class AreaAdmin(admin.ModelAdmin):
 
     @admin.display(description="o que aparece no site")
     def situacao_da_inscricao(self, area):
-        if area.mostra_botao_inscricao:
-            return "botão “Inscreva-se”"
-        if area.inscricoes_abertas:
-            return "marcada como aberta, mas sem link"
-        return "“Inscrições em breve”"
+        return area.situacao_inscricao
 
     @admin.display(description="eventos")
     def quantos_eventos(self, area):

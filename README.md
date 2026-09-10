@@ -28,7 +28,7 @@ Aplicação Django + PostgreSQL, em container, sob o domínio
 |---|---|---|
 | `/` | qualquer um | página da semana (a mesma de sempre) |
 | `/cronograma/` | qualquer um | cronograma, dia por dia, vindo do banco |
-| `/painel/` | coordenações | cadastrar, editar e excluir os eventos das próprias áreas |
+| `/painel/` | coordenações | cadastrar os eventos das próprias áreas e abrir/fechar a inscrição delas |
 | `/admin/` | só o administrador | contas, cursos/áreas e todos os eventos |
 
 A permissão é por **curso/área**. Uma conta de coordenação pode cuidar de uma
@@ -71,7 +71,7 @@ Informática, Biologia e Medicina Veterinária.
 python manage.py test
 ```
 
-São 46 testes, a maioria sobre permissão: o que cada tipo de conta consegue e
+São 56 testes, a maioria sobre permissão: o que cada tipo de conta consegue e
 não consegue fazer, inclusive por POST direto na URL. Também cobrem o estado
 das inscrições na página inicial e o filtro do cronograma.
 
@@ -106,16 +106,19 @@ Dois caminhos, tanto faz:
 
 ### 4. Abrir a inscrição de um curso/área
 
-**Cursos/áreas** → abra a área → em "Inscrição", cole o **link de inscrição**
-do SUAP e marque **inscrições abertas**. O cartão daquele curso na página
-inicial troca na hora o "Inscrições em breve" pelo botão vermelho
-"Inscreva-se".
+Isso **quem faz é a própria coordenação**, no painel — não precisa passar por
+você. Em `/painel/`, no bloco "Inscrições", ela clica em *Alterar* na área
+dela, marca **inscrições abertas** e cola o link do SUAP. O cartão daquele
+curso na página inicial troca na hora o "Inscrições em breve" pelo botão
+vermelho "Inscreva-se".
 
-Dá para abrir e fechar tudo de uma vez: na lista de cursos/áreas a coluna
-"inscrições abertas" é editável direto, sem entrar em cada uma.
+Você também alcança isso em **Cursos/áreas**, para qualquer área, e a coluna
+"inscrições abertas" é editável direto na lista — dá para abrir ou fechar as
+sete de uma vez.
 
 Sem link, a caixa marcada só mostra o selo "Inscrições abertas" e nenhum
-botão — de propósito, para não gerar link quebrado.
+botão — de propósito, para não gerar link quebrado. O painel avisa isso com
+"Falta o link".
 
 ### 5. Desativar uma conta
 
@@ -173,7 +176,7 @@ eventos/
   admin.py               Django Admin, incluindo o campo de áreas no usuário
   templatetags/snct.py   filtro que liga cada cartão da home à sua área
   management/commands/   criar_admin: a conta inicial, a partir do .env
-  tests.py               46 testes, sobretudo de permissão
+  tests.py               56 testes, sobretudo de permissão
   migrations/
     0001_initial.py
     0002_areas_iniciais.py       cria os cursos/áreas da semana
@@ -205,6 +208,7 @@ formulário chamam essa função, então mudar a regra é mudar uma função.
 - **Criar/editar** — o campo de área do formulário só aceita essas áreas, e é a
   mesma queryset que valida o POST
 - **Editar/excluir** — `get_object_or_404(..., area__in=areas_do_usuario(user))`
+- **Inscrição** — `get_object_or_404(areas_do_usuario(user), slug=slug)`
 - **Administrador** — `is_superuser` recebe todas as áreas ativas
 
 ---
