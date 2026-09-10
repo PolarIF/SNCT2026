@@ -3,8 +3,8 @@
 Site da 23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes,
 com cronograma gerenciado pelas próprias coordenações.
 
-Aplicação Django + PostgreSQL, preparada para rodar no Railway sob o domínio
-**snctifroari.online**.
+Aplicação Django + PostgreSQL, em container, sob o domínio
+**snctifroari.online**. Sobe com um `docker compose up -d`.
 
 ```
                     SNCT IFRO
@@ -40,7 +40,7 @@ não apareça na tela.
 
 ## Rodar na sua máquina
 
-Precisa de Python 3.12 ou mais novo (aqui foi testado no 3.14).
+Precisa de Python 3.12 ou mais novo. A imagem de produção usa 3.13.
 
 ```bash
 git clone https://github.com/PolarIF/SNCT2026.git
@@ -71,8 +71,9 @@ Informática, Biologia e Medicina Veterinária.
 python manage.py test
 ```
 
-São 36 testes, a maioria sobre permissão: o que cada tipo de conta consegue e
-não consegue fazer, inclusive por POST direto na URL.
+São 46 testes, a maioria sobre permissão: o que cada tipo de conta consegue e
+não consegue fazer, inclusive por POST direto na URL. Também cobrem o estado
+das inscrições na página inicial e o filtro do cronograma.
 
 ---
 
@@ -103,112 +104,63 @@ Dois caminhos, tanto faz:
 - **Usuários** → abra a conta → marque a área a mais; ou
 - **Cursos/áreas** → abra a área → acrescente a pessoa em "quem pode administrar".
 
-### 4. Desativar uma conta
+### 4. Abrir a inscrição de um curso/área
+
+**Cursos/áreas** → abra a área → em "Inscrição", cole o **link de inscrição**
+do SUAP e marque **inscrições abertas**. O cartão daquele curso na página
+inicial troca na hora o "Inscrições em breve" pelo botão vermelho
+"Inscreva-se".
+
+Dá para abrir e fechar tudo de uma vez: na lista de cursos/áreas a coluna
+"inscrições abertas" é editável direto, sem entrar em cada uma.
+
+Sem link, a caixa marcada só mostra o selo "Inscrições abertas" e nenhum
+botão — de propósito, para não gerar link quebrado.
+
+### 5. Desativar uma conta
 
 **Usuários** → abra a conta → desmarque **Ativo**. Ela deixa de conseguir
 entrar, e os eventos que cadastrou continuam no lugar.
 
-### 5. Trocar uma senha
+### 6. Trocar uma senha
 
 **Usuários** → abra a conta → no campo de senha, clique no link para definir
 uma nova.
 
 ---
 
-## Deploy no Railway
+## Colocar no ar
 
-### 1. Criar o projeto
-
-No Railway: **New Project → Deploy from GitHub repo** e escolha este
-repositório. O Railway detecta Python pelo `requirements.txt` e usa o
-`Procfile`, que roda as migrações antes de subir o servidor.
-
-### 2. Ligar o PostgreSQL
-
-No projeto: **New → Database → Add PostgreSQL**. Depois, no serviço da
-aplicação, em **Variables**, crie `DATABASE_URL` com a referência do banco:
-
-```
-DATABASE_URL = ${{ Postgres.DATABASE_URL }}
-```
-
-### 3. Variáveis de ambiente
-
-No serviço da aplicação, em **Variables**:
-
-| Variável | Valor |
-|---|---|
-| `SECRET_KEY` | uma chave longa e aleatória (veja abaixo) |
-| `DEBUG` | `0` |
-| `ALLOWED_HOSTS` | `snctifroari.online,www.snctifroari.online` |
-| `DATABASE_URL` | `${{ Postgres.DATABASE_URL }}` |
-
-Para gerar a `SECRET_KEY`:
+O site roda em container. Quem administra o servidor tem o passo a passo
+completo em **[IMPLANTACAO.md](IMPLANTACAO.md)** — em resumo:
 
 ```bash
-python -c "import secrets; print(secrets.token_urlsafe(50))"
+git clone https://github.com/PolarIF/SNCT2026.git
+cd SNCT2026
+cp .env.producao.exemplo .env    # preencher
+docker compose up -d --build
 ```
 
-Nunca comite essa chave. Se ela vazar, gere outra e troque a variável — o
-efeito é só derrubar as sessões abertas.
+Sobem três containers: a aplicação, o PostgreSQL e um proxy que resolve o
+certificado HTTPS sozinho. As migrações rodam no início de cada container e a
+primeira conta de administrador é criada a partir do `.env`, então não é
+preciso rodar nada à mão no servidor depois.
 
-O domínio que o Railway gera (`*.up.railway.app`) entra sozinho na lista de
-hosts permitidos, então dá para testar antes de mexer no DNS.
-
-### 4. Criar o administrador em produção
-
-Com a Railway CLI:
-
-```bash
-railway run python manage.py createsuperuser
-```
-
-Ou pelo terminal do serviço, no painel do Railway.
-
-### 5. Ligar o domínio
-
-No serviço: **Settings → Networking → Custom Domain**, adicione
-`snctifroari.online`. O Railway mostra o registro DNS exato para criar no seu
-provedor — use o valor que ele mostrar, não um decorado daqui.
-
-Um detalhe de DNS: o Railway pede um **CNAME**, e a maioria dos provedores não
-aceita CNAME no domínio raiz. Duas saídas:
-
-- usar um provedor que faça achatamento de CNAME (ALIAS/ANAME) na raiz —
-  o Cloudflare faz; ou
-- apontar `www.snctifroari.online` para o Railway e configurar o redirecionamento
-  da raiz para o `www` no provedor.
-
-### 6. Só depois: desligar o GitHub Pages
-
-O site era publicado pelo GitHub Pages a partir da branch `main`. Os arquivos
-`CNAME` e `.nojekyll` na raiz são resto disso e continuam aqui de propósito,
-para não derrubar nada antes da hora.
-
-Quando o Railway estiver no ar e o DNS apontando para ele:
-
-1. em **Settings → Pages** do repositório, desligue o Pages;
-2. apague `CNAME` e `.nojekyll`.
-
-Se precisar voltar ao site estático antigo por algum motivo, ele está inteiro
-no commit `76675f3` — dá para publicar de novo apontando o Pages para uma
-branch criada dali:
-
-```bash
-git branch site-antigo 76675f3
-git push origin site-antigo
-```
-
----
+Para atualizar: `git pull && docker compose up -d --build`.
 
 ## Estrutura
 
 ```
 manage.py
-Procfile                 comandos que o Railway roda (migrate + gunicorn)
 requirements.txt
-.python-version
-.env.example
+.env.example             modelo do .env de desenvolvimento
+
+Dockerfile               a imagem da aplicação
+docker-compose.yml       aplicação + PostgreSQL + proxy com HTTPS
+Caddyfile                o proxy: certificado automático
+scripts/entrypoint.sh    migra e garante o administrador a cada boot
+.env.producao.exemplo    modelo do .env do servidor
+IMPLANTACAO.md           passo a passo para quem administra o servidor
 
 config/
   settings.py            tudo que varia entre máquinas vem de variável de ambiente
@@ -219,10 +171,14 @@ eventos/
   views.py               site público e painel
   forms.py               formulário de evento (limita as áreas do usuário)
   admin.py               Django Admin, incluindo o campo de áreas no usuário
-  tests.py               36 testes, sobretudo de permissão
+  templatetags/snct.py   filtro que liga cada cartão da home à sua área
+  management/commands/   criar_admin: a conta inicial, a partir do .env
+  tests.py               46 testes, sobretudo de permissão
   migrations/
     0001_initial.py
-    0002_areas_iniciais.py   cria os cursos/áreas da semana
+    0002_areas_iniciais.py       cria os cursos/áreas da semana
+    0003_inscricao_por_area.py   link e estado da inscrição
+    0004_link_do_ifromatizando.py
 
 templates/
   base.html              cabeçalho, rodapé e meta tags do site público
@@ -271,8 +227,10 @@ arredondamento de layout.
 Ainda falta preencher, na página inicial (`grep -n "a confirmar" templates/index.html`):
 
 - nome dos responsáveis de 6 dos 7 eventos;
-- contato da comissão organizadora;
-- links de inscrição do SUAP que ainda não abriram.
+- contato da comissão organizadora.
+
+Os links de inscrição **não** ficam mais no HTML: são cadastrados em
+/admin/ → Cursos/áreas, um por curso/área.
 
 ### A marca do IFRO
 

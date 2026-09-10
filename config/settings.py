@@ -1,8 +1,11 @@
 """
 Configuração do site da SNCT — IFRO Campus Ariquemes.
 
-Tudo que muda entre a máquina de casa e o Railway vem de variável de
+Tudo que muda entre a máquina de casa e o servidor vem de variável de
 ambiente. Nada de senha ou chave escrita aqui dentro.
+
+Em produção a aplicação roda em container e as variáveis vêm do .env que
+acompanha o docker-compose.yml. Veja IMPLANTACAO.md.
 """
 
 from pathlib import Path
@@ -43,8 +46,7 @@ if not SECRET_KEY:
     # Chave fixa só para desenvolvimento, para não invalidar a sessão a cada reinício.
     SECRET_KEY = "django-insecure-apenas-para-desenvolvimento-local"
 
-# Domínios que podem servir a aplicação. O Railway injeta a própria URL em
-# RAILWAY_PUBLIC_DOMAIN, então ela entra sozinha na lista.
+# Domínios que podem servir a aplicação. Requisição com outro Host recebe 400.
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS") or [
     "snctifroari.online",
     "www.snctifroari.online",
@@ -52,12 +54,16 @@ ALLOWED_HOSTS = env_list("ALLOWED_HOSTS") or [
     "127.0.0.1",
 ]
 
-dominio_railway = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
-if dominio_railway and dominio_railway not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(dominio_railway)
+# O loopback entra sempre: é por ele que o healthcheck do container bate em
+# /saude/, e ele só é alcançável de dentro do próprio servidor.
+for host in ("localhost", "127.0.0.1"):
+    if host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
-# O POST de um formulário só é aceito vindo destas origens.
-CSRF_TRUSTED_ORIGINS = [
+# O POST de um formulário só é aceito vindo destas origens. Por padrão são os
+# mesmos domínios, em https. Se o site estiver rodando temporariamente em http
+# (antes do certificado), defina CSRF_TRUSTED_ORIGINS com o esquema http://.
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") or [
     f"https://{host}"
     for host in ALLOWED_HOSTS
     if host not in {"localhost", "127.0.0.1"} and "*" not in host
@@ -165,13 +171,26 @@ STORAGES = {
 # ------------------------------------------------------------------- segurança
 
 if not DEBUG:
-    # O Railway termina o HTTPS antes da aplicação; sem isso o Django acha
-    # que a requisição chegou em HTTP e entra em laço de redirecionamento.
+    # Quem termina o HTTPS é o proxy na frente da aplicação (o Caddy do
+    # compose, ou o proxy que a TI já tiver). Sem esta linha o Django acha que
+    # a requisição chegou em HTTP e entra em laço de redirecionamento.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+    # HTTPS_ATIVO=0 desliga o redirecionamento e os cookies "secure". Serve
+    # para dois casos: proxy que não repassa X-Forwarded-Proto, e o intervalo
+    # entre subir o site e o certificado ficar pronto. Ligue de volta assim
+    # que houver certificado — com ele desligado, senha e cookie de sessão
+    # trafegam em texto claro.
+    HTTPS_ATIVO = env_bool("HTTPS_ATIVO", True)
+
+    SECURE_SSL_REDIRECT = HTTPS_ATIVO
+    SESSION_COOKIE_SECURE = HTTPS_ATIVO
+    CSRF_COOKIE_SECURE = HTTPS_ATIVO
+
+    # HSTS obriga o navegador a só voltar por https, e fica lembrado por
+    # semanas. Por isso só entra quando o https já está de pé.
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30 if HTTPS_ATIVO else 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = HTTPS_ATIVO
+
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"

@@ -6,6 +6,7 @@ from eventos import views
 urlpatterns = [
     path("", views.home, name="home"),
     path("cronograma/", views.cronograma, name="cronograma"),
+    path("saude/", views.saude, name="saude"),
     path("painel/", include("eventos.urls")),
     path("admin/", admin.site.urls),
 ]

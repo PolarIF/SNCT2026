@@ -10,11 +10,43 @@ from .models import Area, Evento
 
 @admin.register(Area)
 class AreaAdmin(admin.ModelAdmin):
-    list_display = ["nome", "ativo", "quantos_eventos", "quem_administra"]
-    list_filter = ["ativo"]
+    # "inscrições abertas" é editável direto na lista: dá para abrir e fechar
+    # as sete áreas numa tela só, que é o que a organização faz na semana.
+    list_display = [
+        "nome",
+        "inscricoes_abertas",
+        "situacao_da_inscricao",
+        "ativo",
+        "quantos_eventos",
+        "quem_administra",
+    ]
+    list_editable = ["inscricoes_abertas"]
+    list_filter = ["inscricoes_abertas", "ativo"]
     search_fields = ["nome"]
     prepopulated_fields = {"slug": ["nome"]}
     filter_horizontal = ["gestores"]
+
+    fieldsets = (
+        (None, {"fields": ("nome", "slug", "ativo")}),
+        (
+            "Inscrição",
+            {
+                "fields": ("inscricoes_abertas", "link_inscricao"),
+                "description": "É isso que a página inicial mostra no cartão "
+                "deste curso/área. Sem link não aparece botão, mesmo com a "
+                "caixa marcada.",
+            },
+        ),
+        ("Quem administra", {"fields": ("gestores",)}),
+    )
+
+    @admin.display(description="o que aparece no site")
+    def situacao_da_inscricao(self, area):
+        if area.mostra_botao_inscricao:
+            return "botão “Inscreva-se”"
+        if area.inscricoes_abertas:
+            return "marcada como aberta, mas sem link"
+        return "“Inscrições em breve”"
 
     @admin.display(description="eventos")
     def quantos_eventos(self, area):

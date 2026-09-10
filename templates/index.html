@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static snct %}
 
 {% block conteudo %}
 
@@ -74,25 +74,26 @@
 
   <!-- =========================================================== eventos -->
   <!--
-    COMO EDITAR UM EVENTO
+    COMO EDITAR ESTA LISTA
+
+    A inscrição de cada evento NÃO se mexe aqui. Ela vem do banco: em
+    /admin/ → Cursos/áreas, cada área tem "inscrições abertas" e "link de
+    inscrição". Marcar a caixa e colar o link do SUAP já troca o
+    "Inscrições em breve" pelo botão vermelho, sem reimplantar o site.
+
+    O que ainda se edita neste arquivo é o texto dos cartões:
     - Responsável definido: troque
         <span class="pendente">a confirmar</span>
       por
         <strong>Nome do Professor</strong>
-    - Inscrição aberta: no <article>, acrescente o atributo  data-aberto
-      e, dentro de .evento__acao, troque
-        <span class="em-breve">Inscrições em breve</span>
-      por
-        <a class="botao botao--acao" href="LINK-DO-SUAP" target="_blank" rel="noopener">
-          Inscreva-se <span class="seta" aria-hidden="true">→</span>
-        </a>
-      deixando o link "Ver horários" no lugar.
-      Acrescente também <span class="selo-aberto">Inscrições abertas</span> em .evento__topo.
-      O evento "IFROmatizando" abaixo serve de modelo — ele já está assim.
-    - O "?area=" de cada link é o endereço curto do curso/área, como está
-      cadastrado no /admin/. Se a área for renomeada, o slug pode mudar; um
-      slug que não existe mais simplesmente mostra o cronograma inteiro.
+    - Título, descrição e a programação resumida de cada evento.
+
+    Cada cartão está amarrado a uma área pelo slug que aparece logo acima
+    dele, na linha "area=areas|por_slug". Se uma área for renomeada no
+    /admin/ e o slug mudar, ajuste o slug aqui também — senão o cartão fica
+    sem botão de inscrição.
   -->
+
   <section class="secao" id="eventos">
     <div class="shell">
       <div class="cabeca-secao">
@@ -107,8 +108,10 @@
       <div class="grade-eventos">
 
         <!-- 1 -->
-        <article class="evento revela" style="--i:0">
-          <p class="evento__topo"><span class="trilha">CIEEC</span></p>
+        {% with area=areas|por_slug:"cieec" %}
+        <article class="evento revela" style="--i:0"{% if area.mostra_botao_inscricao %} data-aberto{% endif %}>
+          <p class="evento__topo"><span class="trilha">CIEEC</span>
+            {% if area.inscricoes_abertas %}<span class="selo-aberto">Inscrições abertas</span>{% endif %}</p>
           <h3>Feira das Profissões e Empreendedorismo</h3>
           <p class="evento__responsavel">
             Responsável: <span class="pendente">a confirmar</span> · CIEEC
@@ -130,15 +133,24 @@
             </ul>
           </details>
           <p class="evento__acao">
-            <span class="em-breve">Inscrições em breve</span>
+            {% if area.mostra_botao_inscricao %}
+              <a class="botao botao--acao" href="{{ area.link_inscricao }}"
+                 target="_blank" rel="noopener">
+                Inscreva-se <span class="seta" aria-hidden="true">→</span></a>
+            {% else %}
+              <span class="em-breve">Inscrições em breve</span>
+            {% endif %}
             <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=cieec">
               Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
+        {% endwith %}
 
         <!-- 2 -->
-        <article class="evento revela" style="--i:1">
-          <p class="evento__topo"><span class="trilha">Abertura oficial</span></p>
+        {% with area=areas|por_slug:"geral" %}
+        <article class="evento revela" style="--i:1"{% if area.mostra_botao_inscricao %} data-aberto{% endif %}>
+          <p class="evento__topo"><span class="trilha">Abertura oficial</span>
+            {% if area.inscricoes_abertas %}<span class="selo-aberto">Inscrições abertas</span>{% endif %}</p>
           <h3>Solenidade de Lançamento e Mostras</h3>
           <p class="evento__responsavel">
             Responsável: <span class="pendente">a confirmar</span> · Comissão organizadora
@@ -155,15 +167,24 @@
             </ul>
           </details>
           <p class="evento__acao">
-            <span class="em-breve">Inscrições em breve</span>
+            {% if area.mostra_botao_inscricao %}
+              <a class="botao botao--acao" href="{{ area.link_inscricao }}"
+                 target="_blank" rel="noopener">
+                Inscreva-se <span class="seta" aria-hidden="true">→</span></a>
+            {% else %}
+              <span class="em-breve">Inscrições em breve</span>
+            {% endif %}
             <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=geral">
               Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
+        {% endwith %}
 
         <!-- 3 -->
-        <article class="evento revela" style="--i:2">
-          <p class="evento__topo"><span class="trilha">Agronomia e Agropecuária</span></p>
+        {% with area=areas|por_slug:"agronomia-e-agropecuaria" %}
+        <article class="evento revela" style="--i:2"{% if area.mostra_botao_inscricao %} data-aberto{% endif %}>
+          <p class="evento__topo"><span class="trilha">Agronomia e Agropecuária</span>
+            {% if area.inscricoes_abertas %}<span class="selo-aberto">Inscrições abertas</span>{% endif %}</p>
           <h3>SIAAGRO — Seminário Integrado de Agropecuária e Agronomia</h3>
           <p class="evento__responsavel">
             Responsável: <span class="pendente">a confirmar</span> · Coordenação de Agronomia e Agropecuária
@@ -181,15 +202,24 @@
             </ul>
           </details>
           <p class="evento__acao">
-            <span class="em-breve">Inscrições em breve</span>
+            {% if area.mostra_botao_inscricao %}
+              <a class="botao botao--acao" href="{{ area.link_inscricao }}"
+                 target="_blank" rel="noopener">
+                Inscreva-se <span class="seta" aria-hidden="true">→</span></a>
+            {% else %}
+              <span class="em-breve">Inscrições em breve</span>
+            {% endif %}
             <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=agronomia-e-agropecuaria">
               Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
+        {% endwith %}
 
         <!-- 4 -->
-        <article class="evento revela" style="--i:3">
-          <p class="evento__topo"><span class="trilha">Alimentos</span></p>
+        {% with area=areas|por_slug:"alimentos" %}
+        <article class="evento revela" style="--i:3"{% if area.mostra_botao_inscricao %} data-aberto{% endif %}>
+          <p class="evento__topo"><span class="trilha">Alimentos</span>
+            {% if area.inscricoes_abertas %}<span class="selo-aberto">Inscrições abertas</span>{% endif %}</p>
           <h3>Curso Técnico em Alimentos — Atividades da Semana</h3>
           <p class="evento__responsavel">
             Responsável: <span class="pendente">a confirmar</span> · Coordenação do Curso Técnico em Alimentos
@@ -207,17 +237,25 @@
             </ul>
           </details>
           <p class="evento__acao">
-            <span class="em-breve">Inscrições em breve</span>
+            {% if area.mostra_botao_inscricao %}
+              <a class="botao botao--acao" href="{{ area.link_inscricao }}"
+                 target="_blank" rel="noopener">
+                Inscreva-se <span class="seta" aria-hidden="true">→</span></a>
+            {% else %}
+              <span class="em-breve">Inscrições em breve</span>
+            {% endif %}
             <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=alimentos">
               Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
+        {% endwith %}
 
         <!-- 5 — modelo de evento com inscrição aberta -->
-        <article class="evento revela" style="--i:4" data-aberto>
+        {% with area=areas|por_slug:"informatica" %}
+        <article class="evento revela" style="--i:4"{% if area.mostra_botao_inscricao %} data-aberto{% endif %}>
           <p class="evento__topo">
             <span class="trilha">Informática</span>
-            <span class="selo-aberto">Inscrições abertas</span>
+            {% if area.inscricoes_abertas %}<span class="selo-aberto">Inscrições abertas</span>{% endif %}
           </p>
           <h3>IFROmatizando — III Workshop de Informática</h3>
           <p class="evento__responsavel">
@@ -236,18 +274,24 @@
             </ul>
           </details>
           <p class="evento__acao">
-            <a class="botao botao--acao" href="https://suap.ifro.edu.br/eventos/inscricao/1/1229/"
-               target="_blank" rel="noopener">
-              Inscreva-se <span class="seta" aria-hidden="true">→</span>
-            </a>
+            {% if area.mostra_botao_inscricao %}
+              <a class="botao botao--acao" href="{{ area.link_inscricao }}"
+                 target="_blank" rel="noopener">
+                Inscreva-se <span class="seta" aria-hidden="true">→</span></a>
+            {% else %}
+              <span class="em-breve">Inscrições em breve</span>
+            {% endif %}
             <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=informatica">
               Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
+        {% endwith %}
 
         <!-- 6 -->
-        <article class="evento revela" style="--i:5">
-          <p class="evento__topo"><span class="trilha">Biologia</span></p>
+        {% with area=areas|por_slug:"biologia" %}
+        <article class="evento revela" style="--i:5"{% if area.mostra_botao_inscricao %} data-aberto{% endif %}>
+          <p class="evento__topo"><span class="trilha">Biologia</span>
+            {% if area.inscricoes_abertas %}<span class="selo-aberto">Inscrições abertas</span>{% endif %}</p>
           <h3>Biologia — Oficinas e Demonstrações</h3>
           <p class="evento__responsavel">
             Responsável: <span class="pendente">a confirmar</span> · Coordenação de Biologia
@@ -265,15 +309,24 @@
             </ul>
           </details>
           <p class="evento__acao">
-            <span class="em-breve">Inscrições em breve</span>
+            {% if area.mostra_botao_inscricao %}
+              <a class="botao botao--acao" href="{{ area.link_inscricao }}"
+                 target="_blank" rel="noopener">
+                Inscreva-se <span class="seta" aria-hidden="true">→</span></a>
+            {% else %}
+              <span class="em-breve">Inscrições em breve</span>
+            {% endif %}
             <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=biologia">
               Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
+        {% endwith %}
 
         <!-- 7 -->
-        <article class="evento revela" style="--i:6">
-          <p class="evento__topo"><span class="trilha">Medicina Veterinária</span></p>
+        {% with area=areas|por_slug:"medicina-veterinaria" %}
+        <article class="evento revela" style="--i:6"{% if area.mostra_botao_inscricao %} data-aberto{% endif %}>
+          <p class="evento__topo"><span class="trilha">Medicina Veterinária</span>
+            {% if area.inscricoes_abertas %}<span class="selo-aberto">Inscrições abertas</span>{% endif %}</p>
           <h3>Medicina Veterinária — Oficinas e Demonstrações</h3>
           <p class="evento__responsavel">
             Responsável: <span class="pendente">a confirmar</span> · Coordenação de Medicina Veterinária
@@ -290,11 +343,18 @@
             </ul>
           </details>
           <p class="evento__acao">
-            <span class="em-breve">Inscrições em breve</span>
+            {% if area.mostra_botao_inscricao %}
+              <a class="botao botao--acao" href="{{ area.link_inscricao }}"
+                 target="_blank" rel="noopener">
+                Inscreva-se <span class="seta" aria-hidden="true">→</span></a>
+            {% else %}
+              <span class="em-breve">Inscrições em breve</span>
+            {% endif %}
             <a class="botao botao--sutil" href="{% url 'cronograma' %}?area=medicina-veterinaria">
               Ver horários <span class="seta" aria-hidden="true">→</span></a>
           </p>
         </article>
+        {% endwith %}
 
         <aside class="eventos__aviso revela" style="--i:7">
           <span class="modulo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>

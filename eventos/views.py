@@ -1,4 +1,6 @@
 from django.contrib import messages
+from django.db import connection
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -11,7 +13,24 @@ from .models import Area, Evento, areas_do_usuario
 
 
 def home(request):
-    return render(request, "index.html")
+    # Os cartões são fixos no template, mas o estado da inscrição de cada um
+    # vem do banco, para a organização poder abrir e fechar pelo /admin/ sem
+    # que ninguém precise mexer no HTML nem reimplantar o site.
+    areas = {a.slug: a for a in Area.objects.filter(ativo=True)}
+    return render(request, "index.html", {"areas": areas})
+
+
+def saude(request):
+    """Diz se a aplicação está de pé e enxergando o banco.
+
+    É o que o healthcheck do container consulta, e o primeiro lugar onde a TI
+    olha quando algo parece fora do ar. Responde texto puro de propósito.
+    """
+    try:
+        connection.ensure_connection()
+    except Exception as erro:  # noqa: BLE001 — qualquer falha aqui é "fora do ar"
+        return HttpResponse(f"banco inacessível: {erro}\n", status=503, content_type="text/plain")
+    return HttpResponse("ok\n", content_type="text/plain")
 
 
 def cronograma(request):

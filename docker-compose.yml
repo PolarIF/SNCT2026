@@ -1,0 +1,72 @@
+# Site da SNCT — IFRO Campus Ariquemes
+#
+# Sobe com:  docker compose up -d
+# Instruções completas em IMPLANTACAO.md
+#
+# A imagem é construída aqui mesmo, a partir do código deste repositório —
+# não precisa baixar nada de registro externo além das imagens base.
+#
+# São três serviços: a aplicação, o banco e um proxy que resolve o certificado
+# HTTPS sozinho. Se o servidor já tiver um proxy próprio na porta 443, veja a
+# seção "Se a TI já tem um proxy" do IMPLANTACAO.md — é só apagar o serviço
+# caddy daqui e publicar a porta do serviço web.
+
+services:
+  web:
+    # A imagem é construída a partir deste repositório, na primeira subida.
+    build: .
+    image: snct-site:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://snct:${POSTGRES_PASSWORD}@db:5432/snct
+    volumes:
+      # Só é usado se a instalação optar por SQLite em vez de PostgreSQL.
+      - dados:/dados
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: snct
+      POSTGRES_USER: snct
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      # Comparação e ordenação em português, para "Ávila" vir antes de "Bento".
+      LANG: pt_BR.UTF-8
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snct -d snct"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO:?defina DOMINIO no .env}
+      EMAIL_CERTIFICADO: ${EMAIL_CERTIFICADO:?defina EMAIL_CERTIFICADO no .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Os certificados moram aqui. Sem este volume, cada restart pede um
+      # certificado novo e o Let's Encrypt bloqueia por excesso de pedidos.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  postgres:
+  caddy_data:
+  caddy_config:
+  dados:

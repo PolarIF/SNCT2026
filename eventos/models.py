@@ -24,6 +24,22 @@ class Area(models.Model):
         default=True,
         help_text="Desmarque para esconder a área sem apagar os eventos dela.",
     )
+    # Inscrição: é por área, e quem controla é a organização, pelo /admin/.
+    # Ficam aqui e não no HTML porque mudam durante a semana e o site roda em
+    # container — mexer no template exigiria reconstruir e reimplantar.
+    inscricoes_abertas = models.BooleanField(
+        "inscrições abertas",
+        default=False,
+        help_text="Desmarcado, a página mostra “Inscrições em breve”.",
+    )
+    link_inscricao = models.URLField(
+        "link de inscrição",
+        max_length=300,
+        blank=True,
+        help_text="Endereço da inscrição no SUAP. Sem ele não aparece botão, "
+        "mesmo com as inscrições marcadas como abertas.",
+    )
+
     gestores = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         verbose_name="quem pode administrar",
@@ -43,6 +59,11 @@ class Area(models.Model):
         if not self.slug:
             self.slug = slugify(self.nome)[:80]
         super().save(*args, **kwargs)
+
+    @property
+    def mostra_botao_inscricao(self):
+        """Só há botão quando as inscrições estão abertas e há para onde ir."""
+        return bool(self.inscricoes_abertas and self.link_inscricao)
 
 
 class EventoQuerySet(models.QuerySet):

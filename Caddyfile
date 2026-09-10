@@ -1,0 +1,25 @@
+# Proxy da frente: resolve o certificado HTTPS sozinho, com Let's Encrypt, e
+# repassa tudo para a aplicação. Não precisa de configuração de certificado —
+# basta o domínio já estar apontando para este servidor quando o container
+# subir pela primeira vez.
+
+{
+	email {$EMAIL_CERTIFICADO}
+}
+
+{$DOMINIO}, www.{$DOMINIO} {
+	encode gzip zstd
+
+	reverse_proxy web:8000 {
+		# O Django precisa saber que a requisição original chegou em https,
+		# senão redireciona para https em laço infinito.
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	log {
+		output file /data/acesso.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

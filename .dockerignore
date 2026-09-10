@@ -1,0 +1,18 @@
+.git
+.github
+.venv
+__pycache__
+*.py[cod]
+
+# o banco de desenvolvimento e os segredos locais nunca entram na imagem
+.env
+db.sqlite3
+db.sqlite3-journal
+
+# gerado no build, dentro da própria imagem
+staticfiles/
+
+# não faz parte da aplicação
+marca-ifro/
+prompt.md
+.impeccable.md

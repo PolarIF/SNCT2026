@@ -138,6 +138,61 @@ class SitePublico(Base):
         self.assertNotContains(r, "14:00")
 
 
+class InscricaoNaHome(Base):
+    """A inscrição é dado, não HTML: a organização abre e fecha pelo /admin/."""
+
+    def setUp(self):
+        # os cartões da home apontam para os slugs reais da semana
+        self.cieec = Area.objects.create(nome="CIEEC", slug="cieec")
+
+    def test_sem_link_mostra_em_breve(self):
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "Inscrições em breve")
+
+    def test_com_link_e_aberta_mostra_o_botao(self):
+        self.cieec.inscricoes_abertas = True
+        self.cieec.link_inscricao = "https://suap.ifro.edu.br/eventos/inscricao/1/999/"
+        self.cieec.save()
+
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "https://suap.ifro.edu.br/eventos/inscricao/1/999/")
+        self.assertContains(r, "Inscreva-se")
+        self.assertContains(r, "Inscrições abertas")
+
+    def test_aberta_sem_link_nao_gera_botao_vazio(self):
+        self.cieec.inscricoes_abertas = True
+        self.cieec.save()
+
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "Inscrições abertas")     # o selo aparece
+        self.assertNotContains(r, 'href=""')             # mas sem botão quebrado
+        self.assertIs(self.cieec.mostra_botao_inscricao, False)
+
+    def test_link_sem_estar_aberta_nao_vaza(self):
+        self.cieec.link_inscricao = "https://suap.ifro.edu.br/eventos/inscricao/1/999/"
+        self.cieec.save()
+
+        r = self.client.get(reverse("home"))
+        self.assertNotContains(r, "inscricao/1/999")
+        self.assertNotContains(r, "Inscrições abertas")
+
+    def test_area_desativada_nao_mostra_inscricao(self):
+        self.cieec.inscricoes_abertas = True
+        self.cieec.link_inscricao = "https://suap.ifro.edu.br/eventos/inscricao/1/999/"
+        self.cieec.ativo = False
+        self.cieec.save()
+
+        r = self.client.get(reverse("home"))
+        self.assertNotContains(r, "inscricao/1/999")
+
+
+class Saude(Base):
+    def test_responde_ok(self):
+        r = self.client.get(reverse("saude"))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content, b"ok\n")
+
+
 class Acesso(Base):
     def test_painel_exige_login(self):
         r = self.client.get(reverse("painel:lista"))
