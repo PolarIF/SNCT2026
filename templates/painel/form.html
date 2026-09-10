@@ -21,7 +21,10 @@
       {{ form.area }}
     {% endif %}
 
+    {# Data, início e término numa linha só: é uma informação só, "quando". #}
     {% for campo in form.visible_fields %}
+      {% if campo.name == "data" %}<div class="campos-quando">{% endif %}
+
       <div class="campo{% if campo.errors %} campo--erro{% endif %}">
         <label for="{{ campo.id_for_label }}">
           {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
@@ -34,6 +37,8 @@
           <p class="campo__erro">{{ erro }}</p>
         {% endfor %}
       </div>
+
+      {% if campo.name == "hora_fim" %}</div>{% endif %}
     {% endfor %}
 
     <div class="formulario__acoes">

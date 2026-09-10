@@ -266,9 +266,24 @@ class InscricaoPeloPainel(Base):
     def test_a_lista_do_painel_mostra_o_estado_e_o_link_de_alterar(self):
         self.entrar("coord_ads")
         r = self.client.get(reverse("painel:lista"))
-        self.assertContains(r, "Inscrições em breve")
+        self.assertContains(r, "estado--breve")
         self.assertContains(r, self.url(self.ads))
         self.assertNotContains(r, self.url(self.info))
+
+    def test_a_lista_mostra_o_estado_certo_em_cada_caso(self):
+        self.entrar("coord_ads")
+
+        self.ads.inscricoes_abertas = True
+        self.ads.save()
+        r = self.client.get(reverse("painel:lista"))
+        self.assertContains(r, "estado--falta")
+        self.assertContains(r, "Nenhum botão aparece no site sem o link")
+
+        self.ads.link_inscricao = "https://suap.ifro.edu.br/eventos/inscricao/1/1/"
+        self.ads.save()
+        r = self.client.get(reverse("painel:lista"))
+        self.assertContains(r, "estado--aberta")
+        self.assertNotContains(r, "Nenhum botão aparece")
 
     def test_abrir_no_painel_muda_a_pagina_inicial(self):
         """O ciclo inteiro: coordenação abre no painel, visitante vê o botão."""

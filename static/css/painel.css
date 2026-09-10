@@ -2,17 +2,19 @@
 
 /* ==========================================================================
    Painel das coordenações.
-   Herda as variáveis de style.css (cor, fonte, espaço, raio). Aqui só há o
-   que o painel precisa: uma coluna, texto grande, botões grandes.
-   A regra de ouro desta folha é: nada de sutileza. Quem usa isso vai
-   cadastrar dois eventos por ano, no celular, com pressa.
+
+   Herda as variáveis de style.css (cor, fonte, espaço, raio) e a mesma
+   gramática de estado do site público: círculo cheio = aberto, círculo vazio
+   = ainda não. Quem usa isto entra duas ou três vezes por ano, no celular,
+   com pressa — então a regra é: nada de sutileza, e a informação que decide
+   a ação sempre primeiro na linha.
    ========================================================================== */
 
-.painel { background: var(--papel-2); }
+.painel { background: var(--papel-3); }
 
 .painel__shell {
   width: 100%;
-  max-width: 46rem;
+  max-width: 48rem;
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 1.75rem);
 }
@@ -29,25 +31,50 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-sm);
-  min-height: 3rem;
+  min-height: 3.5rem;
 }
 
 .painel__marca {
   display: flex;
   align-items: center;
   gap: var(--s-2xs);
-  font-family: var(--fonte-display);
-  font-size: var(--t-sm);
-  font-weight: 800;
-  font-stretch: 87%;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #fff;
   text-decoration: none;
+  color: #fff;
 }
-.painel__marca img { height: 1.4375rem; width: auto; }
+.painel__marca img { height: 1.625rem; width: auto; flex: none; }
+.painel__marca span {
+  font-family: var(--fonte-display);
+  font-size: var(--t-base);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.painel__marca small {
+  display: block;
+  font-family: var(--fonte-display);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  font-stretch: 87%;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--sobre-verde-3);
+}
 
-.painel__conta { display: flex; align-items: center; gap: var(--s-sm); }
+.painel__conta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-xs);
+  font-size: var(--t-sm);
+}
+/* Quem está logado, dito na tela: o computador da coordenação é compartilhado. */
+.painel__usuario {
+  padding-right: var(--s-xs);
+  border-right: 1px solid var(--sobre-verde-fina);
+  color: var(--sobre-verde-2);
+  max-width: 32ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .painel__admin,
 .painel__sair {
@@ -74,15 +101,16 @@
   gap: var(--s-sm);
   margin-bottom: var(--s-lg);
 }
+.painel__cabeca > div { flex: 1 1 22rem; }
 .painel h1 {
-  font-size: clamp(1.625rem, 1.4rem + 1vw, 2.125rem);
-  line-height: 1.1;
+  font-size: clamp(1.75rem, 1.5rem + 1.2vw, 2.25rem);
+  line-height: 1.05;
 }
 .painel__quem {
   margin-top: var(--s-3xs);
   font-size: var(--t-sm);
   color: var(--tinta-2);
-  max-width: 52ch;
+  max-width: 56ch;
 }
 .painel__quem strong { color: var(--tinta); font-weight: 600; }
 
@@ -107,15 +135,95 @@
   color: oklch(40% 0.15 26);
 }
 .aviso--info {
-  background: var(--papel-3);
+  background: #fff;
   border: 1px solid var(--linha);
   color: var(--tinta-2);
 }
 
-/* ------------------------------------------------------- lista de eventos */
+/* -------------------------------------------------------- caixas do painel */
 
-.grupo + .grupo { margin-top: var(--s-lg); }
-.grupo--passado { opacity: 0.62; }
+.caixa {
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sombra-sm);
+}
+
+/* rótulo de seção */
+.painel__rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2xs);
+  font-family: var(--fonte-display);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  font-stretch: 87%;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+
+/* ------------------------------------------------------------- inscrições */
+
+.inscricoes {
+  margin-bottom: var(--s-xl);
+  padding: var(--s-sm) var(--s-md) var(--s-2xs);
+}
+.inscricoes__titulo { margin-bottom: var(--s-2xs); }
+
+.inscricao {
+  display: grid;
+  grid-template-columns: 8rem 1fr auto;
+  align-items: center;
+  gap: var(--s-xs);
+  padding-block: var(--s-xs);
+}
+.inscricao + .inscricao { border-top: 1px solid var(--linha); }
+
+.inscricao__area {
+  font-family: var(--fonte-display);
+  font-size: var(--t-base);
+  font-weight: 700;
+  line-height: 1.25;
+}
+/* Só aparece quando o estado precisa de explicação — o resto se explica pelo
+   próprio nome do estado. */
+.inscricao__alerta {
+  margin-top: 1px;
+  font-size: var(--t-sm);
+  color: var(--vermelho-600);
+}
+
+/* estado: mesma gramática do site — cheio é aberto, vazio é ainda não */
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font: 700 var(--t-xs)/1.2 var(--fonte-display);
+  font-stretch: 87%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.estado::before {
+  content: "";
+  width: 0.4375rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  flex: none;
+}
+.estado--aberta { color: var(--verde-700); }
+.estado--aberta::before { background: var(--verde); }
+
+.estado--breve { color: var(--tinta-3); }
+.estado--breve::before { border: 1.5px solid var(--linha-forte); }
+
+.estado--falta { color: var(--vermelho-600); }
+.estado--falta::before { background: var(--vermelho); }
+
+/* --------------------------------------------------------- lista de eventos */
+
+.grupo + .grupo { margin-top: var(--s-xl); }
+.grupo--passado { opacity: 0.6; }
 
 .grupo__data {
   display: flex;
@@ -125,7 +233,8 @@
   padding-bottom: var(--s-2xs);
   margin-bottom: var(--s-xs);
   border-bottom: 2px solid var(--verde);
-  font-size: 1.375rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
 }
 .grupo__data small {
@@ -141,21 +250,41 @@
 
 .cartoes { display: grid; gap: var(--s-xs); }
 
+/* O horário vira coluna, como no cronograma público: os dois passam a ler
+   igual, e a hora deixa de se perder no meio do texto. */
 .cartao {
   display: grid;
-  gap: var(--s-3xs);
-  padding: var(--s-sm) var(--s-md);
+  grid-template-columns: 6.5rem 1fr;
+  gap: var(--s-2xs) var(--s-md);
+  padding: var(--s-md);
   background: #fff;
   border: 1px solid var(--linha);
   border-radius: var(--r-lg);
+  box-shadow: var(--sombra-sm);
+  transition: border-color 160ms var(--saida), box-shadow 160ms var(--saida);
 }
+.cartao:hover { border-color: var(--linha-forte); box-shadow: var(--sombra-md); }
+
 .cartao__hora {
+  grid-row: 1 / span 2;
   font-family: var(--fonte-display);
   font-size: var(--t-base);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--verde-700);
+  line-height: 1.25;
 }
+/* O término desce para a segunda linha por decisão, e não por falta de
+   espaço: "09:00 às 11:00" quebrava no meio da coluna. */
+.cartao__hora small {
+  display: block;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--tinta-3);
+}
+
+.cartao__corpo { display: grid; gap: var(--s-3xs); min-width: 0; }
+
 .cartao__titulo { font-size: 1.1875rem; line-height: 1.25; }
 .cartao__meta {
   display: flex;
@@ -171,21 +300,34 @@
   color: var(--tinta-2);
   max-width: 58ch;
 }
+
 .cartao__acoes {
+  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--s-2xs);
   margin-top: var(--s-2xs);
+  padding-top: var(--s-2xs);
+  border-top: 1px solid var(--linha);
 }
 
-/* Excluir é vermelho só na confirmação. Na lista fica em contorno, para não
-   virar o botão mais chamativo da tela. */
+/* Excluir só é vermelho na tela de confirmação. Aqui é texto e vai para a
+   outra ponta, para não competir com Editar. */
 .botao--apagar {
-  border-color: var(--linha-forte);
-  color: var(--tinta-2);
-  background: transparent;
+  margin-left: auto;
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--tinta-3);
 }
-.botao--apagar:hover { border-color: var(--vermelho); color: var(--vermelho-600); }
+.botao--apagar:hover {
+  background: none;
+  color: var(--vermelho-600);
+  border-bottom-color: var(--vermelho);
+}
 
 .botao--apagar-cheio { background: var(--vermelho); color: #fff; }
 .botao--apagar-cheio:hover { background: var(--vermelho-600); }
@@ -204,9 +346,17 @@
   background: #fff;
   border: 1px solid var(--linha);
   border-radius: var(--r-lg);
+  box-shadow: var(--sombra-sm);
 }
 
-.campo { display: grid; gap: var(--s-3xs); }
+/* Data, início e término são uma coisa só — "quando" — e cabem numa linha. */
+.campos-quando {
+  display: grid;
+  gap: var(--s-sm);
+  grid-template-columns: 1.4fr 1fr 1fr;
+}
+
+.campo { display: grid; gap: var(--s-3xs); align-content: start; }
 .campo label {
   font-family: var(--fonte-display);
   font-size: var(--t-sm);
@@ -248,29 +398,52 @@
 .campo--erro select,
 .campo--erro textarea { border-color: var(--vermelho); }
 
+/* caixa de marcar: o rótulo inteiro é área de clique */
+.campo--caixa label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2xs);
+  cursor: pointer;
+}
+.campo--caixa input[type="checkbox"] {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+  accent-color: var(--verde-700);
+  cursor: pointer;
+}
+
 .campo-fixo {
   padding: var(--s-xs) var(--s-sm);
   background: var(--verde-100);
   border-radius: var(--r-md);
   font-size: var(--t-sm);
+  line-height: 1.45;
   color: var(--verde-800);
 }
+.campo-fixo strong { font-weight: 700; }
 
 .formulario__acoes {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-2xs);
-  padding-top: var(--s-2xs);
+  padding-top: var(--s-sm);
   border-top: 1px solid var(--linha);
 }
 
 /* ------------------------------------------------------------------ entrar */
 
-.entrar { max-width: 24rem; margin-inline: auto; padding-top: var(--s-lg); }
+.entrar {
+  max-width: 25rem;
+  margin-inline: auto;
+  padding-top: var(--s-lg);
+  text-align: center;
+}
+.entrar__logo { height: 3.25rem; width: auto; margin: 0 auto var(--s-md); }
 .entrar h1 { margin-bottom: var(--s-2xs); }
 .entrar__ajuda { font-size: var(--t-sm); color: var(--tinta-2); }
-.entrar__ajuda--fim { margin-top: var(--s-md); text-align: center; color: var(--tinta-3); }
-.entrar .formulario__acoes,
+.entrar__ajuda--fim { margin-top: var(--s-md); color: var(--tinta-3); }
+.entrar .formulario { text-align: left; }
 .entrar .botao--acao { width: 100%; justify-content: center; }
 
 /* ------------------------------------------------------------- confirmação */
@@ -282,6 +455,7 @@
   background: #fff;
   border: 1px solid var(--linha);
   border-radius: var(--r-lg);
+  box-shadow: var(--sombra-md);
   text-align: center;
 }
 .confirmar__pergunta { margin-top: var(--s-sm); font-size: var(--t-lead); line-height: 1.45; }
@@ -318,72 +492,24 @@
 
 /* ---------------------------------------------------------------- celular */
 
-@media (max-width: 32rem) {
+@media (max-width: 34rem) {
+  /* O horário volta para cima do título: coluna de 6,5rem tira largura
+     demais do texto numa tela de 360px. */
+  .cartao { grid-template-columns: 1fr; gap: var(--s-3xs); }
+  .cartao__hora { grid-row: auto; }
+  .cartao__acoes { grid-column: 1; }
+
+  .campos-quando { grid-template-columns: 1fr 1fr; }
+  .campos-quando .campo:first-child { grid-column: 1 / -1; }
+
+  .inscricao { grid-template-columns: 1fr auto; }
+  .inscricao .estado { grid-column: 1 / -1; }
+
+  .painel__usuario { display: none; }
   .painel__cabeca { align-items: stretch; }
   .painel__cabeca .botao { width: 100%; justify-content: center; }
-  .cartao__acoes .botao { flex: 1; justify-content: center; }
   .formulario__acoes .botao { width: 100%; justify-content: center; }
   .confirmar { padding: var(--s-md); }
   .confirmar__acoes { flex-direction: column-reverse; }
   .confirmar__acoes .botao { width: 100%; justify-content: center; }
-}
-
-/* ---------------------------------------------------------- inscrições */
-
-/* Fica acima do cronograma porque é o que a coordenação vem mexer nas duas
-   ou três vezes em que abre o painel fora da rotina de cadastrar evento. */
-.inscricoes {
-  margin-bottom: var(--s-lg);
-  padding: var(--s-sm) var(--s-md);
-  background: #fff;
-  border: 1px solid var(--linha);
-  border-radius: var(--r-lg);
-}
-.inscricoes__titulo {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  font-stretch: 87%;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--tinta-3);
-}
-.inscricoes ul { display: grid; }
-
-.inscricao {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-2xs) var(--s-sm);
-  padding-block: var(--s-xs);
-}
-.inscricao + .inscricao { border-top: 1px solid var(--linha); }
-
-.inscricao__area {
-  font-family: var(--fonte-display);
-  font-size: var(--t-base);
-  font-weight: 700;
-}
-.inscricao__estado { font-size: var(--t-sm); color: var(--tinta-2); }
-.inscricao__aberta { color: var(--verde-700); }
-.inscricao__atencao { color: var(--vermelho-600); }
-
-/* caixa de marcar: o rótulo inteiro é área de clique */
-.campo--caixa label {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2xs);
-  cursor: pointer;
-}
-.campo--caixa input[type="checkbox"] {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex: none;
-  accent-color: var(--verde-700);
-  cursor: pointer;
-}
-
-@media (max-width: 32rem) {
-  .inscricao { align-items: stretch; }
-  .inscricao .botao { width: 100%; justify-content: center; }
 }

@@ -20,11 +20,12 @@
   <div class="painel__shell">
     <a class="painel__marca" href="{% url 'painel:lista' %}">
       <img src="{% static 'img/if-mark-branca.svg' %}" width="17" height="23" alt="">
-      <span>SNCT IFRO</span>
+      <span>Painel da SNCT<small>IFRO Campus Ariquemes</small></span>
     </a>
 
     {% if user.is_authenticated %}
       <div class="painel__conta">
+        <span class="painel__usuario">{{ user.get_full_name|default:user.username }}</span>
         {% if user.is_superuser %}
           <a class="painel__admin" href="/admin/">Administração</a>
         {% endif %}

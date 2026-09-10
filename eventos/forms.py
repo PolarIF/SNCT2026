@@ -14,6 +14,9 @@ class EventoForm(forms.ModelForm):
     class Meta:
         model = Evento
         fields = ["titulo", "area", "data", "hora_inicio", "hora_fim", "local", "descricao"]
+        # Curtos porque os três ficam lado a lado numa linha só: os rótulos
+        # longos quebravam em duas linhas e desalinhavam os campos.
+        labels = {"hora_inicio": "Início", "hora_fim": "Término"}
         widgets = {
             # type="date" e type="time" fazem o navegador (e o celular) abrirem
             # o seletor nativo; o format é o que o input espera receber de volta.

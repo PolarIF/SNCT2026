@@ -1,9 +1,12 @@
 {% extends "painel/base.html" %}
+{% load static %}
 
 {% block titulo %}Entrar{% endblock %}
 
 {% block conteudo %}
   <div class="entrar">
+    <img class="entrar__logo" src="{% static 'img/ifro-lockup.svg' %}" width="205" height="65"
+         alt="Instituto Federal de Rondônia — Campus Ariquemes">
     <h1>Entrar no painel</h1>
     <p class="entrar__ajuda">
       Use o usuário e a senha que a organização da SNCT criou para a sua

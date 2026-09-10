@@ -10,13 +10,10 @@
       <p class="painel__quem">
         {% if user.is_superuser %}
           Você é administrador: vê e edita os eventos de todos os cursos.
+        {% elif varias_areas %}
+          Eventos e inscrições dos cursos que você administra.
         {% else %}
-          Olá, {{ user.get_full_name|default:user.username }}.
-          {% if varias_areas %}
-            Você cuida de: {% for a in areas %}<strong>{{ a.nome }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
-          {% else %}
-            Você cuida de <strong>{{ areas.0.nome }}</strong>.
-          {% endif %}
+          Eventos e inscrições de <strong>{{ areas.0.nome }}</strong>.
         {% endif %}
       </p>
     </div>
@@ -27,23 +24,26 @@
   </div>
 
   {% if areas %}
-    <section class="inscricoes">
-      <h2 class="inscricoes__titulo">Inscrições</h2>
+    <section class="inscricoes caixa">
+      <h2 class="inscricoes__titulo painel__rotulo">Inscrições no site</h2>
       <ul>
         {% for a in areas %}
           <li class="inscricao">
+            {% if a.mostra_botao_inscricao %}
+              <span class="estado estado--aberta">Abertas</span>
+            {% elif a.inscricoes_abertas %}
+              <span class="estado estado--falta">Falta o link</span>
+            {% else %}
+              <span class="estado estado--breve">Em breve</span>
+            {% endif %}
+
             <div>
               <p class="inscricao__area">{{ a.nome }}</p>
-              <p class="inscricao__estado">
-                {% if a.mostra_botao_inscricao %}
-                  <b class="inscricao__aberta">Abertas</b> · o site mostra o botão “Inscreva-se”
-                {% elif a.inscricoes_abertas %}
-                  <b class="inscricao__atencao">Falta o link</b> · marcada como aberta, mas sem botão
-                {% else %}
-                  Em breve · o site mostra “Inscrições em breve”
-                {% endif %}
-              </p>
+              {% if a.inscricoes_abertas and not a.link_inscricao %}
+                <p class="inscricao__alerta">Nenhum botão aparece no site sem o link.</p>
+              {% endif %}
             </div>
+
             <a class="botao botao--linha" href="{% url 'painel:inscricao' a.slug %}">Alterar</a>
           </li>
         {% endfor %}
@@ -71,8 +71,9 @@
         <ul class="cartoes">
           {% for evento in dia.list %}
             <li class="cartao">
-              <p class="cartao__hora">{{ evento.horario }}</p>
+              <p class="cartao__hora">{{ evento.hora_inicio|time:"H:i" }}{% if evento.hora_fim %}<small>às {{ evento.hora_fim|time:"H:i" }}</small>{% endif %}</p>
 
+              <div class="cartao__corpo">
               <h3 class="cartao__titulo">{{ evento.titulo }}</h3>
 
               <p class="cartao__meta">
@@ -89,6 +90,7 @@
               {% if evento.descricao %}
                 <p class="cartao__desc">{{ evento.descricao|truncatechars:180 }}</p>
               {% endif %}
+              </div>
 
               <p class="cartao__acoes">
                 <a class="botao botao--linha" href="{% url 'painel:editar' evento.pk %}">Editar</a>
