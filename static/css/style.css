@@ -27,6 +27,12 @@
   --vermelho:     oklch(54.6% 0.205 26);    /* #CD2027 */
   --vermelho-600: oklch(48.0% 0.190 26);
 
+  /* o rosa vem da marca da 23ª SNCT (#E86AA7), onde ele escreve "DELAS". Cai
+     quase no complementar do verde institucional — matiz 352 contra 146, com
+     croma parecido — e por isso funciona como assinatura do tema sem brigar
+     com a cor da casa. Uso restrito: a assinatura "Ciência Delas". */
+  --rosa: oklch(69.3% 0.169 352);
+
   /* neutros puxados para a matiz da marca: cromas mínimos, mas perceptíveis */
   --papel:        oklch(98.6% 0.004 146);
   --papel-2:      oklch(96.4% 0.007 146);
@@ -393,6 +399,51 @@ a { color: inherit; }
   justify-items: start;
 }
 
+/* Texto de um lado, marca do evento do outro. São só dois filhos, cada um
+   posto à mão na sua coluna: nada de grid-row 1/-1, que numa grade sem linhas
+   explícitas pára na primeira linha e deixaria a marca colada na tarja da
+   data. Abaixo de 62rem vira uma coluna só, com a marca no topo. */
+.heroi__topo {
+  display: grid;
+  gap: clamp(var(--s-lg), 5vw, var(--s-2xl));
+  justify-items: start;
+}
+@media (min-width: 62.0625rem) {
+  .heroi__topo {
+    grid-template-columns: minmax(0, 1fr) min(19rem, 30%);
+    align-items: center;
+  }
+  .heroi__grade  { grid-area: 1 / 1; }
+  /* alinhada pelo topo, e não centrada: o painel começa na altura do título,
+     e não no meio de um bloco de texto que é bem mais alto que ele */
+  .heroi__marca  {
+    grid-area: 1 / 2;
+    justify-self: end;
+    align-self: start;
+    margin-top: var(--s-2xl);
+  }
+}
+
+/* painel claro: a arte precisa de fundo claro — o branco do jaleco e o miolo
+   do círculo vêm do fundo, não da ilustração */
+.heroi__marca {
+  width: min(19rem, 62vw);
+  margin: 0;
+  padding: clamp(var(--s-sm), 2.5vw, var(--s-md));
+  border-radius: var(--r-lg);
+  /* branco puro, e não --papel: a arte tem branco chapado no miolo, e qualquer
+     papel levemente esverdeado faz aparecer a emenda do retângulo da imagem */
+  background: #fff;
+  box-shadow: var(--sombra-lg);
+}
+.heroi__marca img { display: block; width: 100%; height: auto; }
+/* a marca saiu de dentro de .heroi__grade, então entra pela mesma animação
+   escalonada por fora — o --i dela continua sendo o do HTML */
+.heroi__marca {
+  animation: sobe 640ms var(--expo) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
 .heroi__data {
   display: flex;
   align-items: center;
@@ -410,6 +461,15 @@ a { color: inherit; }
 
 .heroi h1 { max-width: 22ch; color: #fff; }
 
+/* h1 desenhado: a logo escrita no lugar do título em texto. O max-width em ch
+   não serve para imagem, e a margem do título vem do gap da grade. */
+.heroi__lockup { max-width: none; margin: 0; }
+.heroi__lockup img {
+  display: block;
+  width: min(30rem, 100%);
+  height: auto;
+}
+
 /* o tema da edição, tratado como assinatura e não como subtítulo */
 .heroi__tema {
   display: grid;
@@ -424,8 +484,10 @@ a { color: inherit; }
   font-style: italic;
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--verde);
-  /* o verde da marca em corpo grande: contraste suficiente porque é display */
+  color: var(--rosa);
+  /* o mesmo rosa que escreve "DELAS" na marca. Sobre o verde-900 do herói dá
+     4,4:1 — acima dos 3:1 que texto grande pede, e mais que o verde que estava
+     aqui antes (3,9:1). */
 }
 .heroi__tema em {
   font-style: normal;
@@ -972,6 +1034,33 @@ a { color: inherit; }
 }
 .rodape img { height: 3.25rem; width: auto; margin-bottom: var(--s-sm); }
 .rodape__grade p { max-width: 42ch; line-height: 1.5; }
+
+/* as duas marcas lado a lado, separadas por um fio: a do IFRO é larga e
+   horizontal, a da SNCT é um bloco quase quadrado — igualar a altura das duas
+   faria a segunda pesar o dobro, então ela vem menor e alinhada pela base */
+/* a especificidade tem de bater a de .rodape__grade p, que prende o parágrafo
+   em 42ch — medida boa para a frase abaixo, e estreita demais para as marcas */
+.rodape__grade .rodape__marcas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-md);
+  max-width: none;
+  /* o respiro que antes vinha do margin-bottom de cada img passa para a linha */
+  margin-bottom: var(--s-sm);
+}
+.rodape__marcas img { margin-bottom: 0; }
+.rodape__marca-snct {
+  height: 2.5rem;
+  padding-left: var(--s-md);
+  border-left: 1px solid var(--sobre-verde-fina);
+  box-sizing: content-box;
+}
+/* no celular as duas não cabem lado a lado: quebram, e aí o fio vertical
+   passaria a pender do nada — o espaço já separa */
+@media (max-width: 30rem) {
+  .rodape__marca-snct { padding-left: 0; border-left: 0; }
+}
 .rodape__links {
   display: grid;
   gap: var(--s-2xs);
@@ -1041,7 +1130,8 @@ a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .heroi__grade > * { animation: aparece 240ms var(--saida) both; animation-delay: 0s; }
+  .heroi__grade > *,
+  .heroi__marca { animation: aparece 240ms var(--saida) both; animation-delay: 0s; }
   .evento:hover { transform: none; }
   .botao:active { transform: none; }
   @keyframes aparece { from { opacity: 0; } to { opacity: 1; } }
