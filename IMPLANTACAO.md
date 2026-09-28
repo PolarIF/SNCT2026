@@ -227,6 +227,58 @@ aí a senha do painel trafega em texto claro entre o proxy e a aplicação.
 
 ---
 
+## Métricas
+
+O site sabe publicar métricas no formato que o [Prometheus](https://prometheus.io)
+entende: quantas requisições chegaram, quanto cada uma demorou, quantas
+consultas ao banco foram feitas e quanto tempo levaram.
+
+Vem **desligado**. Para ligar, ponha no `.env`:
+
+```
+METRICS_ATIVO=1
+```
+
+e suba de novo (`docker compose up -d`). A partir daí o endereço `/metrics`
+responde com o texto que o coletor lê.
+
+### Antes de ligar, feche a porta
+
+`/metrics` **não pede senha**. Ele não expõe dado pessoal nem conteúdo do
+banco, mas entrega o desenho interno do site (rotas, volume de acesso, tempo
+de resposta) — informação que ajuda quem estiver procurando brecha. Então a
+rota não deve chegar à internet.
+
+Quem faz esse bloqueio é o proxy da frente, devolvendo 404 para o caminho.
+Em nginx:
+
+```nginx
+location = /metrics {
+    return 404;
+}
+```
+
+Com Cloudflare Tunnel, antes da regra que serve o site:
+
+```yaml
+  - hostname: seu-dominio.exemplo
+    path: ^/metrics$
+    service: http_status:404
+  - hostname: seu-dominio.exemplo
+    service: http://localhost:8000
+```
+
+O coletor continua enxergando o `/metrics`, porque ele fala direto com o
+container, sem passar pelo proxy.
+
+### Se não houver monitoramento
+
+Deixe `METRICS_ATIVO=0` (ou simplesmente não defina). Com a variável
+desligada o pacote nem entra na lista de aplicações, o `/metrics` não existe e
+nada muda no funcionamento do site.
+
+---
+
 ## Sem PostgreSQL
 
 Se por algum motivo for melhor rodar só um container, a aplicação funciona

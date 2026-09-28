@@ -11,7 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DJANGO_SETTINGS_MODULE=config.settings
+    DJANGO_SETTINGS_MODULE=config.settings \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
 
 WORKDIR /app
 
@@ -36,9 +37,12 @@ RUN SECRET_KEY=build-descartavel DEBUG=0 \
 
 # Roda como usuário comum. O diretório de dados é dele, porque é onde o
 # SQLite escreve quando a instalação não usa PostgreSQL.
+# /tmp/prometheus e onde os workers deixam seus contadores quando as metricas
+# estao ligadas (ver gunicorn.conf.py). Precisa existir e ser do usuario snct;
+# o entrypoint esvazia a cada start, senao sobra contador de worker morto.
 RUN useradd --create-home --shell /bin/bash snct \
- && mkdir -p /dados \
- && chown -R snct:snct /app /dados
+ && mkdir -p /dados /tmp/prometheus \
+ && chown -R snct:snct /app /dados /tmp/prometheus
 USER snct
 
 VOLUME ["/dados"]
@@ -49,6 +53,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 CMD ["gunicorn", "config.wsgi", \
+     "--config", "/app/gunicorn.conf.py", \
      "--bind", "0.0.0.0:8000", \
      "--workers", "3", \
      "--timeout", "180", \

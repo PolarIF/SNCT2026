@@ -46,6 +46,18 @@ if not SECRET_KEY:
     # Chave fixa só para desenvolvimento, para não invalidar a sessão a cada reinício.
     SECRET_KEY = "django-insecure-apenas-para-desenvolvimento-local"
 
+# Métricas no formato Prometheus em /metrics. Desligado por padrão: o endpoint
+# conta requisições, latência e consultas ao banco, e não deve ficar aberto na
+# internet. Só ligue quando houver um coletor e o /metrics estiver bloqueado na
+# borda — veja a seção "Métricas" do IMPLANTACAO.md.
+METRICS_ATIVO = env_bool("METRICS_ATIVO", False)
+
+# Observação sobre métricas com mais de um worker: cada processo do gunicorn
+# teria seus próprios contadores, e o /metrics responderia o de um worker
+# sorteado — as contagens ficariam sem sentido (medimos 40 requisições virarem
+# 30 mil). A correção é a variável PROMETHEUS_MULTIPROC_DIR, definida no
+# Dockerfile porque o entrypoint também precisa dela. Veja gunicorn.conf.py.
+
 # Domínios que podem servir a aplicação. Requisição com outro Host recebe 400.
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS") or [
     "snctifroari.online",
@@ -81,6 +93,9 @@ INSTALLED_APPS = [
     "eventos",
 ]
 
+if METRICS_ATIVO:
+    INSTALLED_APPS.append("django_prometheus")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     # O WhiteNoise serve CSS, JS e imagens em produção, sem precisar de nginx.
@@ -92,6 +107,13 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if METRICS_ATIVO:
+    # O par tem de envolver todo o resto: o "Before" marca o início da
+    # requisição e o "After" fecha a conta. Fora dessa ordem a latência medida
+    # exclui o trabalho dos middlewares do meio.
+    MIDDLEWARE.insert(0, "django_prometheus.middleware.PrometheusBeforeMiddleware")
+    MIDDLEWARE.append("django_prometheus.middleware.PrometheusAfterMiddleware")
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -123,6 +145,16 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+
+if METRICS_ATIVO:
+    # Troca o backend pelo equivalente instrumentado, que mede conexões e
+    # duração das consultas. É o mesmo driver por baixo — só embrulhado.
+    _BACKENDS_INSTRUMENTADOS = {
+        "django.db.backends.postgresql": "django_prometheus.db.backends.postgresql",
+        "django.db.backends.sqlite3": "django_prometheus.db.backends.sqlite3",
+    }
+    for _cfg in DATABASES.values():
+        _cfg["ENGINE"] = _BACKENDS_INSTRUMENTADOS.get(_cfg["ENGINE"], _cfg["ENGINE"])
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -201,6 +233,13 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = HTTPS_ATIVO
     SESSION_COOKIE_SECURE = HTTPS_ATIVO
     CSRF_COOKIE_SECURE = HTTPS_ATIVO
+
+    if METRICS_ATIVO:
+        # O coletor fala com a aplicação por dentro, em HTTP, sem passar pelo
+        # proxy — então não manda X-Forwarded-Proto. Sem esta isenção o Django
+        # responderia 301 para https e as métricas nunca seriam lidas.
+        # Isentar é seguro: /metrics não recebe senha nem cookie.
+        SECURE_REDIRECT_EXEMPT = [r"^metrics$"]
 
     # HSTS obriga o navegador a só voltar por https, e fica lembrado por
     # semanas. Por isso só entra quando o https já está de pé.
