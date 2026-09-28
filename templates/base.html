@@ -62,8 +62,19 @@
   <div class="shell">
     <div class="rodape__grade">
       <div>
-        <img src="{% static 'img/ifro-lockup-branca.svg' %}" width="205" height="65"
-             alt="Instituto Federal de Rondônia — Campus Ariquemes">
+        <!--
+          Co-assinatura: a instituição à esquerda, o evento à direita. As duas
+          marcas em versão branca, porque o rodapé é verde profundo; a do
+          evento é a tipográfica, e não a ilustrada, que exige fundo claro.
+        -->
+        <p class="rodape__marcas">
+          <img class="rodape__marca-ifro" src="{% static 'img/ifro-lockup-branca.svg' %}"
+               width="205" height="65"
+               alt="Instituto Federal de Rondônia — Campus Ariquemes">
+          <img class="rodape__marca-snct" src="{% static 'img/snct-lockup-branca.svg' %}"
+               width="472" height="240"
+               alt="23ª Semana Nacional de Ciência e Tecnologia — tema Ciência Delas">
+        </p>
         <p>
           23ª Semana Nacional de Ciência e Tecnologia · 27 a 30 de outubro de 2026 ·
           <i>Campus</i> Ariquemes

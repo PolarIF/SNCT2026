@@ -5,32 +5,61 @@
 
   <!-- ============================================================ herói -->
   <section class="heroi">
-    <div class="shell heroi__grade">
+    <!--
+      Duas colunas no desktop: o texto de um lado, a marca do evento do outro.
+      A marca vem primeiro no HTML porque no celular a grade vira uma coluna só
+      e é lá em cima que se espera a identidade de um evento; no desktop ela é
+      recolocada na coluna 2 pelo CSS.
+    -->
+    <div class="shell heroi__topo">
 
-      <p class="heroi__data" style="--i:0">
-        <span class="modulo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-        27 a 30 de outubro de 2026
+      <!--
+        A marca do evento repete, em imagem, o que o h1 e o tema já dizem em
+        texto — por isso o alt vazio: para o leitor de tela ela é decoração, e
+        ouvir "23ª Semana Nacional de Ciência e Tecnologia" três vezes seguidas
+        não ajuda ninguém. O painel é branco porque a arte precisa de fundo
+        claro: o branco do jaleco e o miolo do círculo vêm do fundo, não da
+        ilustração.
+      -->
+      <p class="heroi__marca" style="--i:0">
+        <img src="{% static 'img/snct-selo.webp' %}"
+             srcset="{% static 'img/snct-selo-460.webp' %} 460w, {% static 'img/snct-selo.webp' %} 900w"
+             sizes="(max-width: 62rem) min(17rem, 62vw), 19rem"
+             width="900" height="1160" alt="" fetchpriority="high" decoding="async">
       </p>
 
-      <h1 style="--i:1">23ª Semana Nacional de Ciência e Tecnologia</h1>
+      <div class="heroi__grade">
 
-      <p class="heroi__tema" style="--i:2">
-        <em>Tema da edição</em>
-        <span>Ciência Delas</span>
-      </p>
+        <p class="heroi__data" style="--i:1">
+          <span class="modulo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          27 a 30 de outubro de 2026
+        </p>
 
-      <p class="lead" style="--i:3">
-        Quatro dias de feiras, oficinas, mostras e seminários abertos à comunidade
-        escolar e ao público externo, no Instituto Federal de Rondônia.
-      </p>
+        {% comment %}
+          O h1 é a logo escrita. Como imagem pode não chegar — rede ruim, leitor
+          de tela, busca — o texto inteiro vai no alt, e é ele que responde por
+          este h1. Por isso o tema saiu daqui: "TEMA · CIÊNCIA DELAS" já está
+          desenhado dentro do lockup.
+        {% endcomment %}
+        <h1 class="heroi__lockup" style="--i:2">
+          <img src="{% static 'img/snct-lockup-branca.svg' %}" width="472" height="240"
+               alt="23ª Semana Nacional de Ciência e Tecnologia — tema Ciência Delas"
+               fetchpriority="high">
+        </h1>
 
-      <p class="heroi__acoes" style="--i:4">
-        <a class="botao botao--acao" href="#programacao">
-          Ver a programação <span class="seta" aria-hidden="true">→</span>
-        </a>
-        <a class="botao botao--fantasma-claro" href="#eventos">Eventos e inscrições</a>
-      </p>
+        <p class="lead" style="--i:3">
+          Quatro dias de feiras, oficinas, mostras e seminários abertos à comunidade
+          escolar e ao público externo, no Instituto Federal de Rondônia.
+        </p>
 
+        <p class="heroi__acoes" style="--i:4">
+          <a class="botao botao--acao" href="#programacao">
+            Ver a programação <span class="seta" aria-hidden="true">→</span>
+          </a>
+          <a class="botao botao--fantasma-claro" href="#eventos">Eventos e inscrições</a>
+        </p>
+
+      </div>
     </div>
 
     <div class="shell heroi__rodape">

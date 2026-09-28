@@ -19,3 +19,11 @@ staticfiles/
 
 # anexos enviados pelo painel (no servidor ficam num volume)
 midia/
+
+# documentos do evento entregues à mão (edital, templates, logos): eles vão
+# para o site pelo painel, não pelo repositório
+*.pdf
+!marca-ifro/*.pdf
+*.docx
+*.zip
+edital-para-colar-no-site.txt
