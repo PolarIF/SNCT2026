@@ -102,6 +102,73 @@
   </section>
 
   {% comment %}
+    As quatro datas estão fixas aqui de propósito: valem para esta edição
+    inteira, saem do edital e não são campo de painel. Se a comissão remarcar,
+    é aqui que se edita — e o prazo em /painel/ → "Submissão de trabalhos"
+    precisa mudar junto, senão o herói desta página passa a dizer outra coisa.
+
+    A avaliação começa no mesmo dia da submissão porque corre junto com o
+    envio: quem manda cedo é avaliado cedo.
+  {% endcomment %}
+  <section class="secao etapas" id="cronograma-submissao">
+    <div class="shell">
+
+      <div class="cabeca-secao">
+        <p class="rotulo">Datas</p>
+        <h2>Cronograma da submissão</h2>
+        <p class="lead">
+          Da abertura do envio à divulgação do resultado, antes da semana
+          começar.
+        </p>
+      </div>
+
+      <ol class="etapas__lista">
+        <li class="etapa revela" style="--i:0">
+          <p class="etapa__n" aria-hidden="true">1</p>
+          <h3>Submissão</h3>
+          <p class="etapa__data">
+            <time datetime="2026-09-24">24/09</time> a
+            <time datetime="2026-10-12">12/10</time>
+          </p>
+          <p class="etapa__desc">Envio dos trabalhos pelo formulário.</p>
+        </li>
+
+        <li class="etapa revela" style="--i:1">
+          <p class="etapa__n" aria-hidden="true">2</p>
+          <h3>Avaliação</h3>
+          <p class="etapa__data">
+            <time datetime="2026-09-24">24/09</time> a
+            <time datetime="2026-10-15">15/10</time>
+          </p>
+          <p class="etapa__desc">Corre junto com o envio: quem manda cedo é
+            avaliado cedo.</p>
+        </li>
+
+        <li class="etapa revela" style="--i:2">
+          <p class="etapa__n" aria-hidden="true">3</p>
+          <h3>Correções</h3>
+          <p class="etapa__data">
+            <time datetime="2026-10-16">16/10</time> a
+            <time datetime="2026-10-20">20/10</time>
+          </p>
+          <p class="etapa__desc">Prazo para ajustar o que a avaliação apontar.</p>
+        </li>
+
+        <li class="etapa etapa--fecho revela" style="--i:3">
+          <p class="etapa__n" aria-hidden="true">4</p>
+          <h3>Resultado final</h3>
+          <p class="etapa__data">
+            <time datetime="2026-10-26">26/10</time>
+          </p>
+          <p class="etapa__desc">Divulgação dos trabalhos aprovados, na véspera
+            da semana.</p>
+        </li>
+      </ol>
+
+    </div>
+  </section>
+
+  {% comment %}
     O envio é um cartão, e não uma faixa escura: em faixa ele encostava no
     rodapé — também escuro — e os dois viravam a mesma mancha, justamente no
     ponto em que a pessoa precisa ver um botão.

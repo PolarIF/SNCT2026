@@ -1481,6 +1481,81 @@ a { color: inherit; }
   color: var(--tinta-3);
 }
 
+/* Cronograma da submissão: quatro etapas em faixa cinza, no mesmo tratamento
+   da programação da home — cartão branco sobre papel cinza, fio verde em cima.
+   A ordem é o conteúdo, por isso <ol>: o número não é enfeite, é a etapa. */
+.etapas {
+  background: var(--papel-2);
+  border-block: 1px solid var(--linha);
+  padding-block: clamp(2.5rem, 5vw, 3.5rem);
+}
+.etapas .cabeca-secao h2 { font-size: var(--t-h3); }
+.etapas .lead { font-size: var(--t-base); color: var(--tinta-2); }
+
+.etapas__lista {
+  display: grid;
+  gap: var(--s-sm);
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  margin: var(--s-md) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.etapa {
+  display: grid;
+  gap: var(--s-3xs);
+  align-content: start;
+  padding: var(--s-sm) var(--s-md) var(--s-md);
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-top: 3px solid var(--verde-200);
+  border-radius: var(--r-md);
+}
+/* o resultado é o que a pessoa veio procurar: é a única etapa em destaque */
+.etapa--fecho {
+  background: var(--verde-100);
+  border-color: var(--verde-200);
+  border-top-color: var(--verde);
+}
+
+.etapa__n {
+  font-family: var(--fonte-display);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  font-stretch: 87%;
+  letter-spacing: 0.12em;
+  color: var(--verde-600);
+  font-variant-numeric: tabular-nums;
+}
+.etapa h3 {
+  font-size: var(--t-xs);
+  font-family: var(--fonte-display);
+  font-weight: 700;
+  font-stretch: 87%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+.etapa__data {
+  font-family: var(--fonte-display);
+  font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem);
+  font-weight: 800;
+  font-stretch: 104%;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--verde-900);
+  text-wrap: balance;
+}
+.etapa__desc {
+  margin-top: var(--s-3xs);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--tinta-2);
+  max-width: 26ch;
+}
+.etapa--fecho .etapa__desc { color: var(--verde-800); }
+
 /* O envio, no fim da página. Era faixa escura e encostava no rodapé, também
    escuro: as duas viravam uma mancha só e o botão se perdia bem onde ele
    precisa ser visto. Como cartão claro sobre o papel, com o fio vermelho em
