@@ -26,6 +26,11 @@ urlpatterns = [
     ),
 ]
 
+if settings.METRICS_ATIVO:
+    # /metrics para o Prometheus. Sem autenticação — quem publica o site é
+    # responsável por não deixar esta rota chegar à internet (IMPLANTACAO.md).
+    urlpatterns.append(path("", include("django_prometheus.urls")))
+
 admin.site.site_header = "SNCT — IFRO Campus Ariquemes"
 admin.site.site_title = "SNCT IFRO"
 admin.site.index_title = "Administração do site"
