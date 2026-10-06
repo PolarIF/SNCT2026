@@ -4,7 +4,7 @@
 {% block conteudo %}
 
   <!-- ============================================================ herói -->
-  <section class="heroi">
+  <section class="heroi heroi--claro">
     <!--
       Duas colunas no desktop: o texto de um lado, a marca do evento do outro.
       A marca vem primeiro no HTML porque no celular a grade vira uma coluna só
@@ -42,7 +42,7 @@
           desenhado dentro do lockup.
         {% endcomment %}
         <h1 class="heroi__lockup" style="--i:2">
-          <img src="{% static 'img/snct-lockup-branca.svg' %}" width="472" height="240"
+          <img src="{% static 'img/snct-lockup.svg' %}" width="472" height="240"
                alt="23ª Semana Nacional de Ciência e Tecnologia — tema Ciência Delas"
                fetchpriority="high">
         </h1>
@@ -56,14 +56,14 @@
           <a class="botao botao--acao" href="#programacao">
             Ver a programação <span class="seta" aria-hidden="true">→</span>
           </a>
-          <a class="botao botao--fantasma-claro" href="#eventos">Eventos e inscrições</a>
+          <a class="botao botao--linha" href="#eventos">Eventos e inscrições</a>
         </p>
 
       </div>
     </div>
 
     <div class="shell heroi__rodape">
-      <img src="{% static 'img/ifro-horizontal-branca.svg' %}" width="275" height="60"
+      <img src="{% static 'img/ifro-horizontal.svg' %}" width="275" height="60"
            alt="Instituto Federal de Rondônia — Campus Ariquemes">
 
       <!-- preenchida pelo JS a partir de data-inicio/data-fim; sem JS, não aparece -->
@@ -89,10 +89,10 @@
 
         <h2>Envie seu trabalho para a 23ª SNCT</h2>
 
-        <p class="lead">
-          Estudantes de qualquer curso podem inscrever trabalhos na semana.
-          É um formulário só, para o evento inteiro: não é por curso nem por
-          área, e não é preciso escolher evento.
+        <p class="lead">  
+          Estudantes de todos os cursos podem inscrever seus trabalhos na SNCT! Os participantes poderão enviar <b>trabalhos completos</b> ou <b>resumos simples</b>, conforme as normas estabelecidas no Regulamento do evento.<br>
+          📌 Atenção: todos os trabalhos aprovados deverão ser obrigatoriamente apresentados na <b>modalidade banner</b>.
+          Leia o regulamento antes de submeter seu trabalho
         </p>
       </div>
 
