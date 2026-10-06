@@ -60,21 +60,63 @@
 
 <footer class="rodape">
   <div class="shell">
+
+    {% comment %}
+      Uma fileira só, com todas as marcas: a instituição, o evento e os cinco
+      eventos próprios da semana — dentro do verde do rodapé.
+
+      O IFRO e a SNCT vão nas versões brancas, que foram desenhadas para fundo
+      escuro. As cinco dos eventos não existem em versão branca: são tinta
+      escura sobre claro (verde-oliva, verde-escuro, azul-marinho, traço
+      preto), e sobre o verde sumiriam — recortar o fundo delas não resolveria,
+      porque o problema é contraste, não retângulo branco aparecendo. Por isso
+      cada uma ganha uma plaquinha clara, que é o tratamento de sempre para
+      marca de terceiro em rodapé escuro.
+
+      Sem loading="lazy": as sete somam 36 KB, o adiamento pouparia quase nada,
+      e imagem adiada no rodapé chega depois de a pessoa já ter rolado até lá.
+
+      Os arquivos foram normalizados por área, e não por altura: as proporções
+      vão de 0,84 (SIMVET, em pé) a 3,6 (IFROmatizando, deitada), e igualar a
+      altura faria uma virar faixa e a outra sumir.
+    {% endcomment %}
+    <ul class="marcas">
+      <li class="marcas__instituicao">
+        <img src="{% static 'img/ifro-lockup-branca.svg' %}" width="148" height="47"
+             alt="Instituto Federal de Rondônia — Campus Ariquemes">
+      </li>
+      <li class="marcas__instituicao">
+        <img src="{% static 'img/snct-lockup-branca.svg' %}" width="106" height="54"
+             alt="23ª Semana Nacional de Ciência e Tecnologia — tema Ciência Delas">
+      </li>
+
+      <li class="marcas__placa">
+        <img src="{% static 'img/evento-feira-profissoes.webp' %}" width="97" height="65"
+             alt="Feira das Profissões e Empreendedorismo" decoding="async">
+      </li>
+      <li class="marcas__placa">
+        <img src="{% static 'img/evento-ifromatizando.webp' %}" width="151" height="42"
+             alt="III Workshop de Informática" decoding="async">
+      </li>
+      <li class="marcas__placa">
+        <img src="{% static 'img/evento-siaagro.webp' %}" width="142" height="44"
+             alt="VI SIAAGRO 2026 — Semana Integrada de Agronomia e Agropecuária"
+             decoding="async">
+      </li>
+      <li class="marcas__placa">
+        <img src="{% static 'img/evento-simpacta.webp' %}" width="127" height="49"
+             alt="SIMPACTA — Simpósio de Agroindústria, Ciência e Tecnologia de Alimentos"
+             decoding="async">
+      </li>
+      <li class="marcas__placa">
+        <img src="{% static 'img/evento-simvet.webp' %}" width="73" height="87"
+             alt="1º SIMVET Ari — Simpósio de Medicina Veterinária" decoding="async">
+      </li>
+    </ul>
+
     <div class="rodape__grade">
       <div>
-        <!--
-          Co-assinatura: a instituição à esquerda, o evento à direita. As duas
-          marcas em versão branca, porque o rodapé é verde profundo; a do
-          evento é a tipográfica, e não a ilustrada, que exige fundo claro.
-        -->
-        <p class="rodape__marcas">
-          <img class="rodape__marca-ifro" src="{% static 'img/ifro-lockup-branca.svg' %}"
-               width="205" height="65"
-               alt="Instituto Federal de Rondônia — Campus Ariquemes">
-          <img class="rodape__marca-snct" src="{% static 'img/snct-lockup-branca.svg' %}"
-               width="472" height="240"
-               alt="23ª Semana Nacional de Ciência e Tecnologia — tema Ciência Delas">
-        </p>
+        {# As marcas saíram daqui: estão todas na fileira acima, numa linha só. #}
         <p>
           23ª Semana Nacional de Ciência e Tecnologia · 27 a 30 de outubro de 2026 ·
           <i>Campus</i> Ariquemes

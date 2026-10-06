@@ -1094,6 +1094,66 @@ a { color: inherit; }
 
 /* --------------------------------------------------------------- 12. rodapé */
 
+/* ------------------------------------- a fileira de marcas do rodapé
+
+   Todas numa linha, dentro do verde: a instituição, o evento e os cinco
+   eventos próprios da semana.
+
+   As duas primeiras são SVG branco, feito para fundo escuro, e ficam soltas
+   sobre o verde. As cinco dos eventos são tinta escura sobre claro e não
+   existem em versão branca — cada uma ganha uma plaquinha, porque o problema
+   delas é contraste, e recortar o fundo não acrescentaria contraste nenhum.
+
+   As imagens já saíram do processamento com áreas equivalentes entre si — por
+   isso aqui não há height nem max-width igualando nada. Igualar a altura no
+   CSS desfaria o equilíbrio que o recorte buscou: a SIMVET é a única em pé, e
+   com altura igual às outras ficaria estreita demais para ler. */
+.marcas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;   /* alturas diferentes: alinham pelo meio */
+  /* Apertado porque as plaquinhas já acrescentam respiro próprio: somadas,
+     elas põem 80px na conta da largura, e a fileira só cabe numa linha se o
+     vão ceder esse espaço. */
+  gap: var(--s-sm);
+  margin: 0 0 var(--s-xl);
+  padding: 0;
+  list-style: none;
+}
+.marcas li { display: flex; }
+/* O width/height no HTML é a medida de exibição; os arquivos dos eventos têm
+   o dobro de pixels, para tela densa. É assim que se serve 2x sem srcset: o
+   atributo manda no tamanho, e os pixels sobrando viram nitidez. */
+.marcas img { display: block; max-width: 100%; height: auto; }
+
+/* a plaquinha: branca, cantos do sistema, respiro pequeno. Grande demais ela
+   vira cartão e rouba a cena do rodapé; pequena demais a marca encosta na
+   borda e parece recortada */
+.marcas__placa {
+  padding: var(--s-3xs) var(--s-2xs);
+  background: #fff;
+  border-radius: var(--r-sm);
+}
+
+/* o fio separa a assinatura institucional das marcas dos eventos: são coisas
+   de natureza diferente na mesma linha */
+.marcas__instituicao + .marcas__placa {
+  padding-left: var(--s-xs);
+  margin-left: var(--s-2xs);
+  border-left: 1px solid var(--sobre-verde-fina);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+@media (max-width: 40rem) {
+  /* quebrada em várias linhas, o fio penderia do nada */
+  .marcas__instituicao + .marcas__placa {
+    padding-left: var(--s-xs);
+    margin-left: 0;
+    border-left: 0;
+    border-radius: var(--r-sm);
+  }
+}
+
 .rodape {
   background: var(--verde-950);
   color: var(--sobre-verde-2);
@@ -1108,35 +1168,10 @@ a { color: inherit; }
   padding-bottom: var(--s-md);
   border-bottom: 1px solid var(--sobre-verde-fina);
 }
-.rodape img { height: 3.25rem; width: auto; margin-bottom: var(--s-sm); }
+/* Não há regra de altura para .rodape img de propósito: cada marca da fileira
+   já vem do processamento com a medida certa, calibrada por área. Uma altura
+   fixa aqui atropelaria essa calibragem — era o que a regra antiga fazia. */
 .rodape__grade p { max-width: 42ch; line-height: 1.5; }
-
-/* as duas marcas lado a lado, separadas por um fio: a do IFRO é larga e
-   horizontal, a da SNCT é um bloco quase quadrado — igualar a altura das duas
-   faria a segunda pesar o dobro, então ela vem menor e alinhada pela base */
-/* a especificidade tem de bater a de .rodape__grade p, que prende o parágrafo
-   em 42ch — medida boa para a frase abaixo, e estreita demais para as marcas */
-.rodape__grade .rodape__marcas {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-md);
-  max-width: none;
-  /* o respiro que antes vinha do margin-bottom de cada img passa para a linha */
-  margin-bottom: var(--s-sm);
-}
-.rodape__marcas img { margin-bottom: 0; }
-.rodape__marca-snct {
-  height: 2.5rem;
-  padding-left: var(--s-md);
-  border-left: 1px solid var(--sobre-verde-fina);
-  box-sizing: content-box;
-}
-/* no celular as duas não cabem lado a lado: quebram, e aí o fio vertical
-   passaria a pender do nada — o espaço já separa */
-@media (max-width: 30rem) {
-  .rodape__marca-snct { padding-left: 0; border-left: 0; }
-}
 .rodape__links {
   display: grid;
   gap: var(--s-2xs);
