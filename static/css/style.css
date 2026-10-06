@@ -18,7 +18,7 @@
   --verde-600:    oklch(55.0% 0.135 147);
   --verde-700:    oklch(46.0% 0.110 147);   /* verde legível em corpo pequeno */
   --verde-800:    oklch(38.0% 0.089 148);
-  --verde-900:    oklch(30.5% 0.070 149);   /* chão do topo e do herói */
+  --verde-900:    oklch(30.05% 0.070 149);   /* chão do topo e do herói */
   --verde-950:    oklch(24.0% 0.055 149);   /* chão do rodapé */
   --verde-100:    oklch(95.0% 0.028 146);
   --verde-200:    oklch(89.0% 0.050 146);
@@ -32,16 +32,22 @@
      croma parecido — e por isso funciona como assinatura do tema sem brigar
      com a cor da casa. Uso restrito: a assinatura "Ciência Delas". */
   --rosa: oklch(69.3% 0.169 352);
+  /* o mesmo rosa diluído até virar papel: fundo do herói da home */
+  --rosa-50: oklch(95.5% 0.030 352);   /* #FFE8F2 */
 
-  /* neutros puxados para a matiz da marca: cromas mínimos, mas perceptíveis */
-  --papel:        oklch(98.6% 0.004 146);
-  --papel-2:      oklch(96.4% 0.007 146);
-  --papel-3:      oklch(93.6% 0.010 146);
+  /* Neutros puxados para a matiz do rosa da marca (352), e não mais para a do
+     verde (146): é o que dá ao site inteiro o mesmo ar do herói. Os cromas
+     sobem um pouco em relação aos antigos porque o olho perde rosa fraco mais
+     depressa que verde fraco no mesmo croma. A tinta continua na matiz verde:
+     papel rosa, texto verde — é esse o par. */
+  --papel:        oklch(98.6% 0.007 352);
+  --papel-2:      oklch(96.4% 0.018 352);
+  --papel-3:      oklch(93.6% 0.028 352);
   --tinta:        oklch(22.0% 0.014 146);
   --tinta-2:      oklch(44.0% 0.016 146);   /* texto secundário, ~7:1 no papel */
   --tinta-3:      oklch(50.0% 0.016 146);   /* metadados 13px, 5,7:1 no papel */
-  --linha:        oklch(88.0% 0.012 146);
-  --linha-forte:  oklch(78.0% 0.016 146);
+  --linha:        oklch(88.0% 0.024 352);
+  --linha-forte:  oklch(78.0% 0.034 352);
 
   /* sobre o verde profundo: nunca cinza em cima de cor */
   --sobre-verde:      oklch(97.0% 0.012 146);
@@ -410,15 +416,15 @@ a { color: inherit; }
 }
 @media (min-width: 62.0625rem) {
   .heroi__topo {
-    grid-template-columns: minmax(0, 1fr) min(19rem, 30%);
+    grid-template-columns: min(19rem, 30%) minmax(0, 1fr);
     align-items: center;
   }
-  .heroi__grade  { grid-area: 1 / 1; }
+  .heroi__grade  { grid-area: 1 / 2; }
   /* alinhada pelo topo, e não centrada: o painel começa na altura do título,
      e não no meio de um bloco de texto que é bem mais alto que ele */
   .heroi__marca  {
-    grid-area: 1 / 2;
-    justify-self: end;
+    grid-area: 1 / 1;
+    justify-self: start;
     align-self: start;
     margin-top: var(--s-2xl);
   }
@@ -540,6 +546,62 @@ a { color: inherit; }
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
+
+/* ------------------------------------------------- herói claro (só a home)
+   O .heroi é compartilhado com os cabeçalhos curtos de /trabalhos/ e
+   /cronograma/, que continuam escuros. Por isso isto é um modificador, e não
+   uma troca na base: inverte o herói da home para fundo branco e vira, uma a
+   uma, todas as cores que foram escolhidas para claro-sobre-escuro.
+
+   Quem mexer aqui precisa saber que três imagens acompanham a inversão, e
+   elas estão no HTML, não aqui: o lockup, a marca do IFRO do rodapé do herói
+   e a marca-d'água passam da versão branca para a colorida. */
+.heroi--claro {
+  background: var(--rosa-50);
+  color: var(--tinta-2);
+  /* o ar extra existia porque claro sobre escuro pesa menos; em tinta sobre
+     branco a entrelinha volta ao normal do site */
+  line-height: 1.6;
+}
+.heroi--claro::before {
+  background-image: url("../img/if-mark.svg");
+  /* a marca colorida deixava uma mancha rosa atrás do texto: o círculo
+     vermelho do IF. Achatada em preto ela volta a ser o que era no escuro —
+     uma textura neutra, sem cor própria. */
+  filter: grayscale(1) brightness(0);
+  opacity: 0.06;
+}
+
+.heroi--claro h1,
+.heroi--claro .contagem b { color: var(--tinta); }
+.heroi--claro .lead       { color: var(--tinta-2); }
+
+.heroi--claro .heroi__data {
+  border-color: var(--linha);
+  /* branco, e não --papel-2: o papel agora é rosa como o fundo do herói, e a
+     tarja sumiria dentro dele. O branco é o que a destaca. */
+  background: #fff;
+  color: var(--tinta-2);
+}
+.heroi--claro .heroi__data .modulo { color: var(--verde); }
+
+.heroi--claro .heroi__rodape { border-top-color: var(--linha); }
+.heroi--claro .contagem      { color: var(--tinta-3); }
+
+/* Sem painel: o selo foi reexportado com o fundo recortado, então a arte cai
+   direto sobre o rosa.
+
+   O que isso custa: as áreas claras do desenho — o jaleco, o miolo do anel —
+   são buracos na ilustração, não branco pintado. Quem aparece ali é o fundo.
+   Em rosa clarinho isso passa por branco; sobre fundo escuro o jaleco sumiria.
+   Ou seja, este selo só serve em fundo claro. Se o herói voltar a ser verde,
+   é preciso voltar ao painel branco ou reexportar o selo com fundo. */
+.heroi--claro .heroi__marca {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
 
 /* -------------------------------------------- 7. submissão de trabalhos */
 
@@ -1249,6 +1311,20 @@ a { color: inherit; }
   color: #fff;
   max-width: none;
 }
+/* Os dois seletores acima e abaixo têm a mesma especificidade, e este vem
+   depois só por estar mais adiante no arquivo. Como isso é frágil de ler,
+   o modificador claro cobra a sua parte com especificidade maior: as duas
+   classes no mesmo elemento. */
+.heroi--claro.heroi--curto h1 { color: var(--tinta); }
+
+/* a tarja de estado do cabeçalho de /trabalhos/ nasceu para o verde escuro:
+   fio branco translúcido e número branco. Em papel rosa, nada disso aparece. */
+.heroi--claro .estado {
+  border-color: var(--linha);
+  background: #fff;
+}
+.heroi--claro .estado__rotulo { color: var(--tinta-3); }
+.heroi--claro .estado b       { color: var(--verde-700); }
 /* depois de um cabeçalho curto, o respiro da seção de conteúdo é menor */
 .heroi--curto + .secao { padding-top: clamp(2rem, 4vw, 3rem); }
 
