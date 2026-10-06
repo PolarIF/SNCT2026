@@ -633,7 +633,21 @@ a { color: inherit; }
 .chamada__rotulo .modulo { --cel: 6px; color: var(--verde); }
 
 .chamada h2 { color: #fff; max-width: 15ch; }
-.chamada .lead { margin-top: var(--s-sm); color: var(--sobre-verde-2); }
+.chamada .lead {
+  margin-top: var(--s-sm);
+  color: var(--sobre-verde-2);
+  text-align: justify;
+  /* justificar sem hifenizar abre rios de espaço entre as palavras, e em
+     português, que tem palavras longas, o buraco é maior. O hyphens: auto só
+     funciona porque o <html> declara lang="pt-BR" — é o idioma que diz ao
+     navegador onde pode cortar. */
+  hyphens: auto;
+}
+/* em coluna estreita nem a hifenização segura: a última linha de cada bloco
+   fica curta demais e o resto estica. Abaixo disso volta a alinhar à esquerda */
+@media (max-width: 48rem) {
+  .chamada .lead { text-align: left; hyphens: manual; }
+}
 
 /* O cartão de envio. Claro sobre o escuro: é o único objeto da faixa, e por
    isso é onde o olho para. O lugar grande no meio nunca fica vazio — quando
