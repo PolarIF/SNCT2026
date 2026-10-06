@@ -99,19 +99,27 @@
 
   {% else %}
 
-    {% regroup eventos by data as dias %}
-
+    {% comment %}
+      Os dias vêm agrupados da view, como no cronograma público. Um evento que
+      acontece em mais de um dia aparece uma vez em cada; repetido no mesmo
+      dia, aparece uma vez só, com os horários empilhados.
+    {% endcomment %}
     {% for dia in dias %}
-      <section class="grupo{% if dia.grouper < hoje %} grupo--passado{% endif %}">
+      <section class="grupo{% if dia.data < hoje %} grupo--passado{% endif %}">
         <h2 class="grupo__data">
-          {{ dia.grouper|date:"d/m" }}
-          <small>{{ dia.grouper|date:"l" }}{% if dia.grouper < hoje %} · já aconteceu{% endif %}</small>
+          {{ dia.data|date:"d/m" }}
+          <small>{{ dia.data|date:"l" }}{% if dia.data < hoje %} · já aconteceu{% endif %}</small>
         </h2>
 
         <ul class="cartoes">
-          {% for evento in dia.list %}
+          {% for item in dia.itens %}
+            {% with evento=item.evento %}
             <li class="cartao">
-              <p class="cartao__hora">{{ evento.hora_inicio|time:"H:i" }}{% if evento.hora_fim %}<small>às {{ evento.hora_fim|time:"H:i" }}</small>{% endif %}</p>
+              <p class="cartao__hora">
+                {% for h in item.horarios %}
+                  <span>{{ h.hora_inicio|time:"H:i" }}{% if h.hora_fim %}<small>às {{ h.hora_fim|time:"H:i" }}</small>{% endif %}</span>
+                {% endfor %}
+              </p>
 
               <div class="cartao__corpo">
               <h3 class="cartao__titulo">{{ evento.titulo }}</h3>
@@ -137,6 +145,7 @@
                 <a class="botao botao--apagar" href="{% url 'painel:excluir' evento.pk %}">Excluir</a>
               </p>
             </li>
+            {% endwith %}
           {% endfor %}
         </ul>
       </section>
@@ -151,6 +160,40 @@
         <p><a class="botao botao--acao" href="{% url 'painel:novo' %}">+ Adicionar evento</a></p>
       </div>
     {% endfor %}
+
+    {% comment %}
+      Um evento sem nenhum horário não cai em dia nenhum e sumiria da lista —
+      justamente de quem precisa consertá-lo. Dá para chegar nesse estado pelo
+      /admin/, que permite salvar sem o inline preenchido.
+    {% endcomment %}
+    {% if sem_horario %}
+      <section class="grupo">
+        <h2 class="grupo__data">
+          Sem dia marcado
+          <small>não aparecem no cronograma do site</small>
+        </h2>
+        <ul class="cartoes">
+          {% for evento in sem_horario %}
+            <li class="cartao">
+              <p class="cartao__hora"><span class="pendente">—</span></p>
+              <div class="cartao__corpo">
+                <h3 class="cartao__titulo">{{ evento.titulo }}</h3>
+                <p class="cartao__meta">
+                  {% if varias_areas or user.is_superuser %}
+                    <span class="trilha">{{ evento.area.nome }}</span>
+                  {% endif %}
+                  <span class="pendente">falta cadastrar o dia e o horário</span>
+                </p>
+              </div>
+              <p class="cartao__acoes">
+                <a class="botao botao--linha" href="{% url 'painel:editar' evento.pk %}">Editar</a>
+                <a class="botao botao--apagar" href="{% url 'painel:excluir' evento.pk %}">Excluir</a>
+              </p>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
 
   {% endif %}
 

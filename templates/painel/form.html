@@ -21,10 +21,7 @@
       {{ form.area }}
     {% endif %}
 
-    {# Data, início e término numa linha só: é uma informação só, "quando". #}
     {% for campo in form.visible_fields %}
-      {% if campo.name == "data" %}<div class="campos-quando">{% endif %}
-
       <div class="campo{% if campo.errors %} campo--erro{% endif %}">
         <label for="{{ campo.id_for_label }}">
           {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
@@ -37,9 +34,79 @@
           <p class="campo__erro">{{ erro }}</p>
         {% endfor %}
       </div>
-
-      {% if campo.name == "hora_fim" %}</div>{% endif %}
     {% endfor %}
+
+    {% comment %}
+      Quando a atividade acontece. É uma lista porque o mesmo evento pode se
+      repetir: duas sessões no mesmo dia aparecem no site como um cartão só,
+      com os dois horários; dias diferentes viram um cartão em cada dia.
+
+      Sem JavaScript isto continua funcionando: vem sempre uma linha vazia
+      sobrando, então dá para acrescentar um horário por vez, salvando entre
+      um e outro. Com JavaScript, o botão clona a linha-modelo e não há
+      limite. Por isso o modelo vai no HTML com o índice __prefix__ que o
+      Django usa — é o próprio empty_form do formset.
+    {% endcomment %}
+    <fieldset class="quando">
+      <legend>Dias e horários</legend>
+
+      {{ horarios.management_form }}
+
+      {% if horarios.non_form_errors %}
+        <p class="aviso aviso--error">{{ horarios.non_form_errors|join:" " }}</p>
+      {% endif %}
+
+      <div class="quando__linhas" id="quando-linhas">
+        {% for linha in horarios %}
+          <div class="quando__linha">
+            {{ linha.id }}
+            <div class="campos-quando">
+              {% for campo in linha.visible_fields %}
+                {% if campo.name != "DELETE" %}
+                  <div class="campo{% if campo.errors %} campo--erro{% endif %}">
+                    <label for="{{ campo.id_for_label }}">
+                      {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
+                    </label>
+                    {{ campo }}
+                    {% for erro in campo.errors %}
+                      <p class="campo__erro">{{ erro }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+
+            {% if linha.instance.pk %}
+              <label class="quando__remover">
+                {{ linha.DELETE }} Remover este horário
+              </label>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      {# O modelo que o JS clona. Fica escondido e fora da contagem do formset. #}
+      <template id="quando-modelo">
+        <div class="quando__linha">
+          <div class="campos-quando">
+            {% for campo in horarios.empty_form.visible_fields %}
+              {% if campo.name != "DELETE" %}
+                <div class="campo">
+                  <label>{{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}</label>
+                  {{ campo }}
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </template>
+
+      <p class="quando__acoes" hidden id="quando-acoes">
+        <button type="button" class="botao botao--linha" id="quando-adicionar">
+          + Adicionar outro dia/horário
+        </button>
+      </p>
+    </fieldset>
 
     <div class="formulario__acoes">
       <button type="submit" class="botao botao--acao">
@@ -48,4 +115,37 @@
       <a class="botao botao--linha" href="{% url 'painel:lista' %}">Cancelar</a>
     </div>
   </form>
+
+  <script>
+    // Progressive enhancement: o botão só aparece se este script rodar. Sem
+    // ele o formulário continua inteiro — a linha vazia que sobra permite
+    // acrescentar um horário por vez.
+    (function () {
+      const linhas = document.getElementById('quando-linhas');
+      const modelo = document.getElementById('quando-modelo');
+      const acoes = document.getElementById('quando-acoes');
+      const botao = document.getElementById('quando-adicionar');
+      const total = document.getElementById('id_{{ horarios.prefix }}-TOTAL_FORMS');
+      if (!linhas || !modelo || !acoes || !botao || !total) return;
+
+      acoes.hidden = false;
+
+      botao.addEventListener('click', function () {
+        const indice = parseInt(total.value, 10);
+        const nova = modelo.content.cloneNode(true);
+        // O empty_form vem com __prefix__ no lugar do índice; trocar em todo
+        // atributo (name, id, for) é o que faz o Django enxergar a linha nova.
+        nova.querySelectorAll('[name], [id], [for]').forEach(function (el) {
+          ['name', 'id', 'for'].forEach(function (attr) {
+            const valor = el.getAttribute(attr);
+            if (valor) el.setAttribute(attr, valor.replace(/__prefix__/g, indice));
+          });
+        });
+        linhas.appendChild(nova);
+        total.value = indice + 1;
+        const primeiro = linhas.lastElementChild.querySelector('input');
+        if (primeiro) primeiro.focus();
+      });
+    })();
+  </script>
 {% endblock %}

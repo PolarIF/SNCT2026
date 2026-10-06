@@ -11,10 +11,14 @@
       <strong>“{{ evento.titulo }}”</strong>?
     </p>
 
+    {# Todos os dias, e não só um: excluir o evento leva junto todos eles. #}
     <p class="confirmar__detalhe">
-      {{ evento.data|date:"d/m/Y" }} · {{ evento.horario }}
-      {% if evento.local %} · {{ evento.local }}{% endif %}<br>
-      {{ evento.area.nome }}
+      {% for h in evento.horarios.all %}
+        {{ h.data|date:"d/m/Y" }} · {{ h.intervalo }}<br>
+      {% empty %}
+        <span class="pendente">sem dia marcado</span><br>
+      {% endfor %}
+      {% if evento.local %}{{ evento.local }} · {% endif %}{{ evento.area.nome }}
     </p>
 
     <p class="confirmar__aviso">Isso não pode ser desfeito.</p>

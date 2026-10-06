@@ -32,20 +32,30 @@
         </nav>
       {% endif %}
 
-      {% regroup eventos by data as dias %}
-
+      {% comment %}
+        Os dias já vêm agrupados da view (agenda_por_dia), e não por {% regroup %}:
+        o agrupamento é por duas chaves ao mesmo tempo — o dia e, dentro dele, o
+        evento. É o que faz uma atividade repetida no mesmo dia sair num cartão
+        só, com os dois horários, e uma atividade em dias diferentes sair num
+        cartão por dia, cada um com o horário daquele dia.
+      {% endcomment %}
       {% for dia in dias %}
         <section class="crono-dia revela">
           <h2 class="crono-dia__cabeca">
-            <span class="crono-dia__numero">{{ dia.grouper|date:"d" }}</span>
-            <span class="crono-dia__mes">{{ dia.grouper|date:"F" }}</span>
-            <small>{{ dia.grouper|date:"l" }}</small>
+            <span class="crono-dia__numero">{{ dia.data|date:"d" }}</span>
+            <span class="crono-dia__mes">{{ dia.data|date:"F" }}</span>
+            <small>{{ dia.data|date:"l" }}</small>
           </h2>
 
           <ul class="crono-lista">
-            {% for evento in dia.list %}
+            {% for item in dia.itens %}
+              {% with evento=item.evento %}
               <li class="crono-item">
-                <p class="crono-item__hora">{{ evento.horario }}</p>
+                <p class="crono-item__hora">
+                  {% for h in item.horarios %}
+                    <span>{{ h.intervalo }}</span>
+                  {% endfor %}
+                </p>
                 <div class="crono-item__corpo">
                   <h3>{{ evento.titulo }}</h3>
                   <p class="crono-item__meta">
@@ -77,6 +87,7 @@
                   {% endif %}
                 </div>
               </li>
+              {% endwith %}
             {% endfor %}
           </ul>
         </section>

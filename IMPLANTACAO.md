@@ -173,6 +173,28 @@ sobrevive. É por isso que os arquivos enviados pelo painel vão para
 `/dados/midia`, no volume — o `docker-compose.yml` já traz a variável
 `MEDIA_ROOT` apontando para lá, e ela vem do repositório, não do `.env`.
 
+#### Na atualização que traz vários dias por evento
+
+Uma atualização específica muda o formato dos dados: o dia e o horário saíram
+de dentro do evento e viraram tabela própria, porque a mesma atividade pode
+acontecer em mais de um dia. **Tire o backup antes desta**, mesmo que o resto
+seja rotina:
+
+```bash
+docker compose exec -T db pg_dump -U snct snct | gzip > antes-dos-horarios-$(date +%F).sql.gz
+```
+
+Nada é apagado: as migrações `0010` e `0011` copiam o que já existe para a
+tabela nova e só então removem as colunas antigas. No PostgreSQL o DDL é
+transacional — ou a sequência inteira passa, ou o banco fica exatamente como
+estava, sem meio-termo. Depois de subir, confira no painel que todo evento
+continua com o seu dia e horário.
+
+As duas migrações são reversíveis (`migrate eventos 0009` devolve os dados
+para o formato antigo), mas um evento que já tenha ganhado um segundo horário
+perde os extras na volta: do lado antigo não existe onde guardá-los. Reverter
+é recurso de emergência; o caminho normal de desfazer é restaurar o backup.
+
 ### Reiniciar
 
 ```bash

@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserChangeForm as UserChangeFormPadrao
 from django.contrib.auth.forms import UserCreationForm as UserCreationFormPadrao
 from django.contrib.auth.models import Group, User
 
-from .models import Anexo, Area, Cartao, Evento, Submissao
+from .models import Anexo, Area, Cartao, Evento, Horario, Submissao
 
 
 @admin.register(Area)
@@ -111,14 +111,39 @@ class CartaoAdmin(admin.ModelAdmin):
         return cartao.etiqueta
 
 
+class HorarioInline(admin.TabularInline):
+    """Os dias e horários do evento, editados dentro dele.
+
+    `min_num=1` porque evento sem horário não aparece em lugar nenhum do site:
+    o cronograma percorre Horario, não Evento.
+    """
+
+    model = Horario
+    extra = 1
+    min_num = 1
+
+
 @admin.register(Evento)
 class EventoAdmin(admin.ModelAdmin):
-    list_display = ["titulo", "area", "data", "hora_inicio", "local", "tem_inscricao_propria"]
-    list_filter = ["area", "data"]
+    # A data saiu de Evento e foi para Horario, então nem list_display nem
+    # list_filter nem date_hierarchy podem mais apontar para ela. O que fica é
+    # uma coluna que lê os horários já carregados pelo prefetch.
+    list_display = ["titulo", "area", "quando", "local", "tem_inscricao_propria"]
+    list_filter = ["area", "horarios__data"]
     search_fields = ["titulo", "descricao", "local"]
-    date_hierarchy = "data"
     autocomplete_fields = ["area"]
     readonly_fields = ["criado_por", "criado_em", "atualizado_em"]
+    inlines = [HorarioInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("horarios")
+
+    @admin.display(description="quando")
+    def quando(self, obj):
+        horarios = list(obj.horarios.all())
+        if not horarios:
+            return "—"
+        return ", ".join(f"{h.data:%d/%m} {h.intervalo}" for h in horarios)
 
     @admin.display(description="inscrição própria", boolean=True)
     def tem_inscricao_propria(self, obj):

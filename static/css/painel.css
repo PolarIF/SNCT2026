@@ -569,3 +569,46 @@
   .confirmar__acoes { flex-direction: column-reverse; }
   .confirmar__acoes .botao { width: 100%; justify-content: center; }
 }
+
+/* ----------------------------------------------------- dias e horários
+
+   Um evento pode acontecer mais de uma vez, então "quando" deixou de ser
+   três campos e virou uma lista de linhas. Cada linha é um dia com início e
+   término; o botão de acrescentar só aparece se o JavaScript rodar, e sem
+   ele a linha vazia que sobra ainda permite acrescentar um por vez. */
+.quando {
+  margin: 0;
+  padding: var(--s-sm) var(--s-md) var(--s-md);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-md);
+}
+.quando legend {
+  padding-inline: var(--s-2xs);
+  font-family: var(--fonte-display);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--tinta-2);
+}
+.quando__linhas { display: grid; gap: var(--s-sm); }
+
+/* o fio separa uma linha da seguinte: sem ele, três campos repetidos viram
+   uma grade só e não se vê onde um horário termina e o outro começa */
+.quando__linha + .quando__linha {
+  padding-top: var(--s-sm);
+  border-top: 1px dashed var(--linha);
+}
+
+.quando__remover {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3xs);
+  margin-top: var(--s-2xs);
+  font-size: var(--t-xs);
+  color: var(--tinta-3);
+}
+.quando__acoes { margin-top: var(--s-sm); }
+.quando__acoes[hidden] { display: none; }
+
+/* a coluna de horários do cartão: vários empilhados quando o evento se
+   repete no mesmo dia */
+.cartao__hora { display: grid; gap: var(--s-3xs); }

@@ -8,8 +8,24 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .forms import AnexoForm, CartaoForm, EventoForm, InscricaoDaAreaForm, SubmissaoForm
-from .models import Anexo, Area, Cartao, Evento, Submissao, areas_do_usuario
+from .forms import (
+    AnexoForm,
+    CartaoForm,
+    EventoForm,
+    HorarioFormSet,
+    InscricaoDaAreaForm,
+    SubmissaoForm,
+)
+from .models import (
+    Anexo,
+    Area,
+    Cartao,
+    Evento,
+    Horario,
+    Submissao,
+    agenda_por_dia,
+    areas_do_usuario,
+)
 
 # ---------------------------------------------------------------- site público
 
@@ -86,11 +102,16 @@ def cronograma(request):
 
     O filtro por área é opcional e vem pela query string (?area=slug).
     """
-    eventos = Evento.objects.publicos()
+    # Percorre Horario, e não Evento: é o horário que tem dia, e é por dia que
+    # o cronograma se organiza. Um evento que acontece em dois dias aparece nos
+    # dois; duas sessões no mesmo dia viram um cartão só (ver agenda_por_dia).
+    horarios = Horario.objects.publicos()
 
     # Os atalhos oferecem só as áreas que já têm alguma atividade — filtro
     # vazio não serve de nada.
-    areas = list(Area.objects.filter(ativo=True, eventos__isnull=False).distinct())
+    areas = list(
+        Area.objects.filter(ativo=True, eventos__horarios__isnull=False).distinct()
+    )
 
     # O slug pedido, porém, é resolvido entre todas as áreas ativas. Os cartões
     # da página inicial apontam para cá antes de a área ter evento cadastrado;
@@ -101,19 +122,24 @@ def cronograma(request):
     if slug:
         area_atual = Area.objects.filter(ativo=True, slug=slug).first()
         if area_atual:
-            eventos = eventos.filter(area=area_atual)
+            horarios = horarios.filter(evento__area=area_atual)
             if area_atual not in areas:
                 areas.append(area_atual)
                 areas.sort(key=lambda a: a.nome)
+
+    dias = agenda_por_dia(horarios)
 
     return render(
         request,
         "cronograma.html",
         {
-            "eventos": eventos,
+            "dias": dias,
             "areas": areas,
             "area_atual": area_atual,
-            "total": eventos.count(),
+            # O total conta atividades, e não horários: um evento que se repete
+            # é uma atividade só na frase "N atividades". Como ele pode cair em
+            # dias diferentes, soma-se item por item dos dias.
+            "total": sum(len(dia["itens"]) for dia in dias),
             "pagina": "cronograma",
         },
     )
@@ -134,17 +160,25 @@ def _evento_do_usuario(request, pk):
 @login_required
 def lista(request):
     areas = areas_do_usuario(request.user)
-    eventos = (
-        Evento.objects.filter(area__in=areas)
-        .select_related("area")
-        .order_by("data", "hora_inicio", "titulo")
+    # Mesma lógica do cronograma público: a agenda se organiza por horário, e
+    # um evento repetido aparece em cada dia em que acontece.
+    dias = agenda_por_dia(
+        Horario.objects.filter(evento__area__in=areas).select_related(
+            "evento", "evento__area"
+        )
     )
 
     return render(
         request,
         "painel/lista.html",
         {
-            "eventos": eventos,
+            "dias": dias,
+            "total": sum(len(dia["itens"]) for dia in dias),
+            # Evento sem nenhum horário não entra em `dias` e sumiria do painel
+            # — e some justamente de quem precisa consertá-lo. Aparece à parte.
+            "sem_horario": Evento.objects.filter(
+                area__in=areas, horarios__isnull=True
+            ).select_related("area"),
             "areas": areas,
             "varias_areas": len(areas) > 1,
             "hoje": timezone.localdate(),
@@ -369,16 +403,27 @@ def novo(request):
 
     if request.method == "POST":
         form = EventoForm(request.POST, user=request.user)
-        if form.is_valid():
+        horarios = HorarioFormSet(request.POST)
+        # Os dois precisam estar válidos antes de qualquer save: gravar o
+        # evento e só então descobrir que os horários não prestam deixaria no
+        # banco um evento que não aparece em lugar nenhum do site.
+        if form.is_valid() and horarios.is_valid():
             evento = form.save(commit=False)
             evento.criado_por = request.user
             evento.save()
+            horarios.instance = evento
+            horarios.save()
             messages.success(request, f"Evento “{evento.titulo}” cadastrado.")
             return redirect("painel:lista")
     else:
         form = EventoForm(user=request.user)
+        horarios = HorarioFormSet()
 
-    return render(request, "painel/form.html", {"form": form, "titulo_pagina": "Novo evento"})
+    return render(
+        request,
+        "painel/form.html",
+        {"form": form, "horarios": horarios, "titulo_pagina": "Novo evento"},
+    )
 
 
 @login_required
@@ -387,17 +432,25 @@ def editar(request, pk):
 
     if request.method == "POST":
         form = EventoForm(request.POST, instance=evento, user=request.user)
-        if form.is_valid():
+        horarios = HorarioFormSet(request.POST, instance=evento)
+        if form.is_valid() and horarios.is_valid():
             form.save()
+            horarios.save()
             messages.success(request, f"Evento “{evento.titulo}” atualizado.")
             return redirect("painel:lista")
     else:
         form = EventoForm(instance=evento, user=request.user)
+        horarios = HorarioFormSet(instance=evento)
 
     return render(
         request,
         "painel/form.html",
-        {"form": form, "evento": evento, "titulo_pagina": "Editar evento"},
+        {
+            "form": form,
+            "horarios": horarios,
+            "evento": evento,
+            "titulo_pagina": "Editar evento",
+        },
     )
 
 

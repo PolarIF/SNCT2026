@@ -15,7 +15,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse, reverse_lazy
 
-from .models import Anexo, Area, Cartao, Evento, Submissao
+from .models import Anexo, Area, Cartao, Evento, Horario, Submissao
 
 
 class Base(TestCase):
@@ -55,17 +55,19 @@ class Base(TestCase):
 
         cls.ev_ads = Evento.objects.create(
             titulo="Palestra sobre Inteligência Artificial",
-            data=date(2026, 10, 28),
-            hora_inicio=time(14, 0),
             local="Auditório",
             area=cls.ads,
         )
+        Horario.objects.create(
+            evento=cls.ev_ads, data=date(2026, 10, 28), hora_inicio=time(14, 0)
+        )
         cls.ev_info = Evento.objects.create(
             titulo="Workshop de Flutter",
-            data=date(2026, 10, 29),
-            hora_inicio=time(16, 0),
             local="Laboratório 03",
             area=cls.info,
+        )
+        Horario.objects.create(
+            evento=cls.ev_info, data=date(2026, 10, 29), hora_inicio=time(16, 0)
         )
 
     def entrar(self, usuario):
@@ -73,13 +75,23 @@ class Base(TestCase):
         self.assertTrue(ok, f"{usuario} deveria conseguir entrar")
 
     def dados(self, **troca):
+        """O POST do formulário de evento, com o formset de horários junto.
+
+        O formset exige os campos de gestão (TOTAL_FORMS e companhia); sem
+        eles o Django recusa o envio antes de olhar qualquer campo, e o teste
+        falharia por um motivo que nada tem a ver com o que ele mede.
+        """
         base = {
             "titulo": "Evento de teste",
-            "data": "2026-10-30",
-            "hora_inicio": "09:00",
-            "hora_fim": "",
             "local": "Sala 1",
             "descricao": "",
+            "horarios-TOTAL_FORMS": "1",
+            "horarios-INITIAL_FORMS": "0",
+            "horarios-MIN_NUM_FORMS": "0",
+            "horarios-MAX_NUM_FORMS": "1000",
+            "horarios-0-data": "2026-10-30",
+            "horarios-0-hora_inicio": "09:00",
+            "horarios-0-hora_fim": "",
         }
         base.update(troca)
         return base
@@ -140,7 +152,18 @@ class SitePublico(Base):
         self.entrar("coord_ads")
         self.client.post(
             reverse("painel:editar", args=[self.ev_ads.pk]),
-            self.dados(titulo=self.ev_ads.titulo, hora_inicio="15:00", area=self.ads.pk),
+            self.dados(
+                titulo=self.ev_ads.titulo,
+                area=self.ads.pk,
+                **{
+                    # editar mexe num horário que já existe: o formset precisa
+                    # do id dele, senão cria um segundo em vez de alterar
+                    "horarios-INITIAL_FORMS": "1",
+                    "horarios-0-id": str(self.ev_ads.horarios.get().pk),
+                    "horarios-0-data": "2026-10-28",
+                    "horarios-0-hora_inicio": "15:00",
+                },
+            ),
         )
         self.client.logout()
 
@@ -973,11 +996,9 @@ class InscricaoNoCronograma(Base):
         self.assertEqual(
             Evento.objects.get(pk=self.ev_ads.pk).area.link_inscricao, self.LINK_DA_AREA
         )
-        outro = Evento.objects.create(
-            titulo="Mesa-redonda",
-            data=date(2026, 10, 30),
-            hora_inicio=time(8, 0),
-            area=self.ads,
+        outro = Evento.objects.create(titulo="Mesa-redonda", area=self.ads)
+        Horario.objects.create(
+            evento=outro, data=date(2026, 10, 30), hora_inicio=time(8, 0)
         )
         self.assertEqual(outro.url_inscricao, self.LINK_DA_AREA)
 
@@ -1318,7 +1339,10 @@ class RegrasDoEvento(Base):
         self.entrar("coord_ads")
         r = self.client.post(
             reverse("painel:novo"),
-            self.dados(area=self.ads.pk, hora_inicio="16:00", hora_fim="14:00"),
+            self.dados(
+                area=self.ads.pk,
+                **{"horarios-0-hora_inicio": "16:00", "horarios-0-hora_fim": "14:00"},
+            ),
         )
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "depois do de início")
@@ -1326,15 +1350,19 @@ class RegrasDoEvento(Base):
 
     def test_termino_e_opcional(self):
         self.entrar("coord_ads")
-        r = self.client.post(reverse("painel:novo"), self.dados(area=self.ads.pk, hora_fim=""))
+        r = self.client.post(
+            reverse("painel:novo"),
+            self.dados(area=self.ads.pk, **{"horarios-0-hora_fim": ""}),
+        )
         self.assertRedirects(r, reverse("painel:lista"))
-        self.assertIsNone(Evento.objects.get(titulo="Evento de teste").hora_fim)
+        evento = Evento.objects.get(titulo="Evento de teste")
+        self.assertIsNone(evento.horarios.get().hora_fim)
 
     def test_horario_formatado(self):
-        evento = Evento(hora_inicio=time(14, 0), hora_fim=time(16, 30))
-        self.assertEqual(evento.horario, "14:00 às 16:30")
-        evento.hora_fim = None
-        self.assertEqual(evento.horario, "14:00")
+        horario = Horario(hora_inicio=time(14, 0), hora_fim=time(16, 30))
+        self.assertEqual(horario.intervalo, "14:00 às 16:30")
+        horario.hora_fim = None
+        self.assertEqual(horario.intervalo, "14:00")
 
     def test_slug_sai_do_nome(self):
         area = Area.objects.create(nome="Medicina Veterinária")
@@ -1345,3 +1373,129 @@ class RegrasDoEvento(Base):
 
         with self.assertRaises(ProtectedError):
             self.ads.delete()
+
+
+class EventoComVariosHorarios(Base):
+    """A regra pedida: repetição no mesmo dia é um cartão; em dias diferentes,
+    um cartão por dia.
+
+    É o que a mudança inteira existe para fazer, então é o que estes testes
+    olham — pelo HTML que a pessoa vê, e não pelo agrupador por dentro.
+    """
+
+    def test_duas_sessoes_no_mesmo_dia_sao_um_cartao_so(self):
+        evento = Evento.objects.create(titulo="Oficina de Robótica", area=self.ads)
+        Horario.objects.create(
+            evento=evento,
+            data=date(2026, 10, 27),
+            hora_inicio=time(9, 0),
+            hora_fim=time(11, 0),
+        )
+        Horario.objects.create(
+            evento=evento,
+            data=date(2026, 10, 27),
+            hora_inicio=time(14, 0),
+            hora_fim=time(16, 0),
+        )
+
+        r = self.client.get(reverse("cronograma"))
+        corpo = r.content.decode()
+
+        # um cartão, com os dois horários dentro
+        self.assertEqual(corpo.count("Oficina de Robótica"), 1)
+        self.assertIn("09:00 às 11:00", corpo)
+        self.assertIn("14:00 às 16:00", corpo)
+
+    def test_dois_dias_diferentes_dao_um_cartao_em_cada(self):
+        evento = Evento.objects.create(titulo="Mostra de Agronomia", area=self.ads)
+        Horario.objects.create(
+            evento=evento, data=date(2026, 10, 29), hora_inicio=time(8, 0)
+        )
+        Horario.objects.create(
+            evento=evento, data=date(2026, 10, 30), hora_inicio=time(8, 0)
+        )
+
+        r = self.client.get(reverse("cronograma"))
+        corpo = r.content.decode()
+        self.assertEqual(corpo.count("Mostra de Agronomia"), 2)
+
+    def test_o_total_conta_atividades_por_dia_e_nao_horarios(self):
+        """Duas sessões num dia são uma linha do cronograma, e contam uma vez.
+
+        Sem isto o rodapé diria "4 atividades" para quem vê três.
+        """
+        evento = Evento.objects.create(titulo="Oficina de Robótica", area=self.ads)
+        Horario.objects.create(
+            evento=evento, data=date(2026, 10, 27), hora_inicio=time(9, 0)
+        )
+        Horario.objects.create(
+            evento=evento, data=date(2026, 10, 27), hora_inicio=time(14, 0)
+        )
+
+        r = self.client.get(reverse("cronograma"))
+        # os dois da fixture, mais este, que ocupa uma linha só
+        self.assertContains(r, "3 atividades")
+
+    def test_painel_cadastra_evento_com_dois_horarios(self):
+        self.entrar("coord_ads")
+        r = self.client.post(
+            reverse("painel:novo"),
+            self.dados(
+                area=self.ads.pk,
+                **{
+                    "horarios-TOTAL_FORMS": "2",
+                    "horarios-1-data": "2026-10-31",
+                    "horarios-1-hora_inicio": "10:00",
+                    "horarios-1-hora_fim": "",
+                },
+            ),
+        )
+        self.assertRedirects(r, reverse("painel:lista"))
+        evento = Evento.objects.get(titulo="Evento de teste")
+        self.assertEqual(evento.horarios.count(), 2)
+
+    def test_evento_sem_nenhum_horario_e_recusado(self):
+        """Evento sem horário não aparece em lugar nenhum do site — o
+        cronograma percorre Horario. Então o formulário não deixa criar um."""
+        self.entrar("coord_ads")
+        r = self.client.post(
+            reverse("painel:novo"),
+            self.dados(
+                area=self.ads.pk,
+                **{
+                    "horarios-TOTAL_FORMS": "1",
+                    "horarios-0-data": "",
+                    "horarios-0-hora_inicio": "",
+                },
+            ),
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "pelo menos um dia e horário")
+        self.assertFalse(Evento.objects.filter(titulo="Evento de teste").exists())
+
+    def test_dois_horarios_iguais_sao_recusados(self):
+        self.entrar("coord_ads")
+        r = self.client.post(
+            reverse("painel:novo"),
+            self.dados(
+                area=self.ads.pk,
+                **{
+                    "horarios-TOTAL_FORMS": "2",
+                    "horarios-1-data": "2026-10-30",
+                    "horarios-1-hora_inicio": "09:00",
+                    "horarios-1-hora_fim": "",
+                },
+            ),
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "dois horários iguais")
+        self.assertFalse(Evento.objects.filter(titulo="Evento de teste").exists())
+
+    def test_excluir_evento_leva_os_horarios_junto(self):
+        evento = Evento.objects.create(titulo="Some tudo", area=self.ads)
+        Horario.objects.create(
+            evento=evento, data=date(2026, 10, 27), hora_inicio=time(9, 0)
+        )
+        self.entrar("coord_ads")
+        self.client.post(reverse("painel:excluir", args=[evento.pk]))
+        self.assertFalse(Horario.objects.filter(evento_id=evento.pk).exists())

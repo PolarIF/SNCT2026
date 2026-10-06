@@ -1,7 +1,15 @@
 from django import forms
 from django.conf import settings
 
-from .models import Anexo, Area, Cartao, Evento, Submissao, areas_do_usuario
+from .models import (
+    Anexo,
+    Area,
+    Cartao,
+    Evento,
+    Horario,
+    Submissao,
+    areas_do_usuario,
+)
 
 
 class EventoForm(forms.ModelForm):
@@ -24,25 +32,16 @@ class EventoForm(forms.ModelForm):
 
     class Meta:
         model = Evento
+        # Os dias e horários saíram daqui: viraram o formset abaixo, porque um
+        # evento pode ter mais de um.
         fields = [
             "titulo",
             "area",
-            "data",
-            "hora_inicio",
-            "hora_fim",
             "local",
             "descricao",
             "link_inscricao",
         ]
-        # Curtos porque os três ficam lado a lado numa linha só: os rótulos
-        # longos quebravam em duas linhas e desalinhavam os campos.
-        labels = {"hora_inicio": "Início", "hora_fim": "Término"}
         widgets = {
-            # type="date" e type="time" fazem o navegador (e o celular) abrirem
-            # o seletor nativo; o format é o que o input espera receber de volta.
-            "data": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "hora_inicio": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
-            "hora_fim": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
             "titulo": forms.TextInput(attrs={"placeholder": "Ex.: Palestra sobre Inteligência Artificial"}),
             "local": forms.TextInput(attrs={"placeholder": "Ex.: Auditório"}),
             "descricao": forms.Textarea(attrs={"rows": 4}),
@@ -63,6 +62,76 @@ class EventoForm(forms.ModelForm):
             campo_area.widget = forms.HiddenInput()
         else:
             campo_area.empty_label = "Escolha o curso/área"
+
+
+class HorarioForm(forms.ModelForm):
+    """Uma linha de "quando" dentro do formulário do evento."""
+
+    class Meta:
+        model = Horario
+        fields = ["data", "hora_inicio", "hora_fim"]
+        # Curtos porque os três ficam lado a lado numa linha só: rótulos longos
+        # quebravam em duas linhas e desalinhavam os campos.
+        labels = {"data": "Dia", "hora_inicio": "Início", "hora_fim": "Término"}
+        widgets = {
+            # type="date" e type="time" fazem o navegador (e o celular) abrirem
+            # o seletor nativo; o format é o que o input espera receber de volta.
+            "data": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "hora_inicio": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            "hora_fim": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+        }
+
+
+class HorarioFormSetBase(forms.BaseInlineFormSet):
+    """O formset dos dias e horários de um evento.
+
+    Faz duas coisas que o formset padrão não faz: exige pelo menos um horário
+    sobrevivente e recusa dois horários iguais no mesmo envio.
+    """
+
+    def clean(self):
+        # As checagens próprias vêm antes de super(): o validate_unique do
+        # Django enxerga a mesma duplicidade (há UniqueConstraint no banco),
+        # mas avisa com "corrija o valor duplicado para data e hora_inicio" —
+        # nome de coluna, não português. Quem chega primeiro escreve a
+        # mensagem, então vem primeiro quem sabe explicar.
+        if any(self.errors):
+            return
+
+        vistos = set()
+        sobreviventes = 0
+        for form in self.forms:
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+            sobreviventes += 1
+            chave = (form.cleaned_data["data"], form.cleaned_data["hora_inicio"])
+            if chave in vistos:
+                # A mesma checagem existe como UniqueConstraint no banco. Aqui
+                # ela vira mensagem em vez de erro 500: o banco só veria isto
+                # depois do save, e aí já seria tarde para explicar.
+                raise forms.ValidationError(
+                    "Há dois horários iguais: mesmo dia e mesma hora de início."
+                )
+            vistos.add(chave)
+
+        if not sobreviventes:
+            raise forms.ValidationError(
+                "O evento precisa de pelo menos um dia e horário."
+            )
+
+        super().clean()
+
+
+HorarioFormSet = forms.inlineformset_factory(
+    Evento,
+    Horario,
+    form=HorarioForm,
+    formset=HorarioFormSetBase,
+    # Uma linha vazia sobrando: dá para acrescentar um horário sem depender de
+    # JavaScript. O botão "adicionar" clona esta linha quando há JS.
+    extra=1,
+    can_delete=True,
+)
 
 
 class InscricaoDaAreaForm(forms.ModelForm):

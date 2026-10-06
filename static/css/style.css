@@ -1403,13 +1403,25 @@ a { color: inherit; }
   padding-block: var(--s-md);
   border-bottom: 1px solid var(--linha);
 }
+/* Uma atividade pode acontecer mais de uma vez no mesmo dia — de manhã e de
+   tarde, por exemplo. Nesse caso é um cartão só, com os horários empilhados
+   aqui, um por linha: a coluna é estreita e "09:00 às 11:00 · 14:00 às 16:00"
+   em linha corrida quebraria em lugar errado. */
 .crono-item__hora {
+  display: grid;
+  gap: var(--s-3xs);
   font-family: var(--fonte-display);
   font-size: var(--t-base);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--verde-700);
   line-height: 1.4;
+}
+/* do segundo horário em diante, um grau abaixo: o primeiro é quando começa,
+   que é o que a pessoa procura ao correr o olho pela coluna */
+.crono-item__hora span ~ span {
+  font-size: var(--t-sm);
+  color: var(--tinta-3);
 }
 .crono-item__corpo { display: grid; gap: var(--s-2xs); min-width: 0; }
 .crono-item h3 { font-size: 1.25rem; }

@@ -95,9 +95,8 @@ class Evento(models.Model):
         blank=True,
         help_text="Uma ou duas frases sobre a atividade.",
     )
-    data = models.DateField("data")
-    hora_inicio = models.TimeField("horário de início")
-    hora_fim = models.TimeField("horário de término", null=True, blank=True)
+    # Quando a atividade acontece não mora mais aqui: um evento pode ter mais
+    # de um dia e horário, e cada um é uma linha em `horarios`.
     local = models.CharField("local", max_length=120, blank=True)
     link_inscricao = models.URLField(
         "link de inscrição",
@@ -130,17 +129,13 @@ class Evento(models.Model):
     class Meta:
         verbose_name = "evento"
         verbose_name_plural = "eventos"
-        ordering = ["data", "hora_inicio", "titulo"]
-        indexes = [models.Index(fields=["data", "hora_inicio"])]
+        # Ordenar por data deixou de ser possível aqui: a data é de Horario, e
+        # um evento pode ter várias. Quem precisa de ordem cronológica percorre
+        # Horario, que é o que o cronograma e o painel fazem.
+        ordering = ["titulo"]
 
     def __str__(self):
-        return f"{self.data:%d/%m} {self.hora_inicio:%H:%M} — {self.titulo}"
-
-    def clean(self):
-        if self.hora_fim and self.hora_inicio and self.hora_fim <= self.hora_inicio:
-            raise ValidationError(
-                {"hora_fim": "O horário de término tem que ser depois do de início."}
-            )
+        return self.titulo
 
     # Inscrição: o link próprio manda, e o da área é o padrão. Uma oficina
     # com vagas limitadas costuma ter formulário só dela; o resto da semana
@@ -166,13 +161,116 @@ class Evento(models.Model):
         """O botão leva a um formulário só desta atividade?"""
         return bool(self.link_inscricao)
 
+    def horarios_em(self, data):
+        """Os horários deste evento num dia. Avalia em Python de propósito:
+        quem chama já trouxe `horarios` com prefetch, e uma consulta por dia
+        desfaria isso."""
+        return [h for h in self.horarios.all() if h.data == data]
+
+
+class HorarioQuerySet(models.QuerySet):
+    def publicos(self):
+        """O que aparece no cronograma do site.
+
+        Traz evento e área junto: o cronograma lê título, local e inscrição de
+        cada um, e sem isto seriam duas consultas por linha da agenda.
+        """
+        return self.filter(evento__area__ativo=True).select_related(
+            "evento", "evento__area"
+        )
+
+
+class Horario(models.Model):
+    """Um dia e horário em que o evento acontece.
+
+    Era um trio de campos dentro de Evento (data, hora_inicio, hora_fim), o
+    que amarrava cada atividade a um único momento. Virou tabela porque a
+    mesma atividade pode se repetir: uma oficina que roda de manhã e de tarde
+    no mesmo dia, uma mostra que ocupa quinta e sexta.
+
+    O que o site faz com isso está em `agenda_por_dia`: repetição no mesmo dia
+    é um cartão só com os dois horários; dias diferentes são um cartão em cada
+    dia, cada um com o horário daquele dia.
+    """
+
+    evento = models.ForeignKey(
+        "Evento",
+        verbose_name="evento",
+        on_delete=models.CASCADE,
+        related_name="horarios",
+    )
+    data = models.DateField("dia")
+    hora_inicio = models.TimeField("horário de início")
+    hora_fim = models.TimeField("horário de término", null=True, blank=True)
+
+    objects = HorarioQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "dia e horário"
+        verbose_name_plural = "dias e horários"
+        ordering = ["data", "hora_inicio"]
+        indexes = [models.Index(fields=["data", "hora_inicio"])]
+        constraints = [
+            # O mesmo evento no mesmo dia e na mesma hora é engano de digitação,
+            # e apareceria duas vezes no cronograma. hora_fim fica fora da chave
+            # de propósito: dois horários que começam juntos já são o engano,
+            # terminem quando terminarem.
+            models.UniqueConstraint(
+                fields=["evento", "data", "hora_inicio"],
+                name="horario_sem_repeticao",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.data:%d/%m} {self.intervalo}"
+
+    def clean(self):
+        if self.hora_fim and self.hora_inicio and self.hora_fim <= self.hora_inicio:
+            raise ValidationError(
+                {"hora_fim": "O horário de término tem que ser depois do de início."}
+            )
+
     @property
-    def horario(self):
-        """"14:00 às 16:00" ou apenas "14:00" quando não há término."""
+    def intervalo(self):
+        """"14:00 às 16:00", ou apenas "14:00" quando não há término."""
         inicio = self.hora_inicio.strftime("%H:%M")
         if not self.hora_fim:
             return inicio
         return f"{inicio} às {self.hora_fim:%H:%M}"
+
+
+def agenda_por_dia(horarios):
+    """Horários agrupados por dia e, dentro do dia, por evento.
+
+    Devolve uma lista de {"data": date, "itens": [{"evento", "horarios"}]}.
+
+    É aqui que mora a regra pedida: duas sessões no mesmo dia viram um item só
+    com os dois horários, e sessões em dias diferentes viram um item em cada
+    dia. Fazer isso em Python, e não com `regroup` no template, é o que
+    permite agrupar por duas chaves de uma vez — dia e evento.
+
+    `horarios` precisa vir ordenado por data e hora_inicio, que é a ordenação
+    padrão de Horario. A ordem de chegada é a ordem de saída: dentro do dia,
+    cada evento aparece na posição do seu primeiro horário.
+    """
+    dias = []
+    indice_do_dia = {}
+    for horario in horarios:
+        dia = indice_do_dia.get(horario.data)
+        if dia is None:
+            dia = {"data": horario.data, "itens": [], "_por_evento": {}}
+            indice_do_dia[horario.data] = dia
+            dias.append(dia)
+        item = dia["_por_evento"].get(horario.evento_id)
+        if item is None:
+            item = {"evento": horario.evento, "horarios": []}
+            dia["_por_evento"][horario.evento_id] = item
+            dia["itens"].append(item)
+        item["horarios"].append(horario)
+
+    for dia in dias:
+        del dia["_por_evento"]
+    return dias
 
 
 class Submissao(models.Model):
