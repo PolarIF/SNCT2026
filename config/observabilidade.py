@@ -31,6 +31,16 @@ DURACAO = Histogram(
 
 ROTA_DESCONHECIDA = "<desconhecida>"
 
+# O verbo HTTP é controlado por quem chama: um cliente com método inventado
+# (o gunicorn/WSGI deixa passar verbos arbitrários, ao contrário do uvicorn)
+# viraria uma série nova a cada verbo diferente — cardinalidade sem limite,
+# achado da varredura de segurança. Só os verbos reais entram crus no rótulo;
+# o resto cai num balde fixo, igual ao <desconhecida> da rota.
+METODOS_CONHECIDOS = frozenset(
+    {"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT"}
+)
+METODO_DESCONHECIDO = "<desconhecido>"
+
 # Caminhos de infraestrutura: existem para o sistema se observar, não para
 # servir gente. Medi-los faz a raspagem (/metrics, 15s) e o healthcheck
 # (/saude/, 30s) dominarem a série e inflarem o denominador de erro.
@@ -63,6 +73,8 @@ class ObservabilidadeMiddleware:
             else:
                 rota = ROTA_DESCONHECIDA
             metodo = request.method or "GET"
+            if metodo not in METODOS_CONHECIDOS:
+                metodo = METODO_DESCONHECIDO
             codigo = str(response.status_code)
             REQUISICOES.labels(method=metodo, route=rota, status=codigo).inc()
             DURACAO.labels(method=metodo, route=rota).observe(duracao)

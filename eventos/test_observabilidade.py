@@ -29,3 +29,11 @@ class ContratoDeMetricas(TestCase):
         self.client.get("/essa-rota-nao-existe/")
         corpo = self._raspar()
         self.assertIn('route="<desconhecida>"', corpo)
+
+    def test_verbo_inventado_vira_metodo_desconhecido(self):
+        # O verbo HTTP vem do cliente: sem normalizar, cada verbo inventado
+        # criaria uma série nova (cardinalidade sem teto). Tem de cair no balde.
+        self.client.generic("VERBOINVENTADO", "/cronograma/")
+        corpo = self._raspar()
+        self.assertIn('method="<desconhecido>"', corpo)
+        self.assertNotIn("VERBOINVENTADO", corpo)
