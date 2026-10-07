@@ -23,7 +23,8 @@
   --verde-100:    oklch(95.0% 0.028 146);
   --verde-200:    oklch(89.0% 0.050 146);
 
-  /* vermelho: só ação e o círculo da marca — 10% do peso visual, no máximo */
+  /* Vermelho: agora só o círculo da marca do IF. É cor institucional, medida
+     no vetor oficial — trocá-la descaracterizaria a marca do Instituto. */
   --vermelho:     oklch(54.6% 0.205 26);    /* #CD2027 */
   --vermelho-600: oklch(48.0% 0.190 26);
 
@@ -34,6 +35,15 @@
   --rosa: oklch(69.3% 0.169 352);
   /* o mesmo rosa diluído até virar papel: fundo do herói da home */
   --rosa-50: oklch(95.5% 0.030 352);   /* #FFE8F2 */
+
+  /* O rosa da ação: botões, fios de costura, datas em destaque. É o rosa do
+     "DELAS" na mesma matiz e no mesmo croma, mas escurecido — e o motivo é
+     contraste, não gosto. O rosa da marca tem 69,3% de clareza, e texto
+     branco em cima dele dá 2,98:1, longe dos 4,5:1 que um botão exige. A
+     54% ele chega a 5,56:1, que é onde o vermelho que estava aqui vivia
+     (5,48:1). Mesma função, mesmo peso, cor nova. */
+  --rosa-700: oklch(54.0% 0.169 352);  /* #B33979 */
+  --rosa-800: oklch(49.0% 0.169 352);  /* o tom de hover */
 
   /* Neutros puxados para a matiz do rosa da marca (352), e não mais para a do
      verde (146): é o que dá ao site inteiro o mesmo ar do herói. Os cromas
@@ -270,10 +280,10 @@ a { color: inherit; }
 .botao:active { transform: translateY(1px); }
 
 .botao--acao {
-  background: var(--vermelho);
+  background: var(--rosa-700);
   color: #fff;
 }
-.botao--acao:hover { background: var(--vermelho-600); }
+.botao--acao:hover { background: var(--rosa-800); }
 
 .botao--linha {
   border-color: var(--linha-forte);
@@ -607,12 +617,12 @@ a { color: inherit; }
 
 /* A submissão é a única ação que vale para o evento inteiro. Ganha faixa
    inteira, e não um cartão no meio do papel: é o que faz a seção ter
-   território próprio. O fio vermelho no topo é a costura com o herói — sem
+   território próprio. O fio rosa no topo é a costura com o herói — sem
    ele, as duas faixas escuras viram uma mancha só. */
 .chamada {
   background: var(--verde-950);
   color: var(--sobre-verde);
-  border-top: 4px solid var(--vermelho);
+  border-top: 4px solid var(--rosa-700);
   padding-block: clamp(2.75rem, 5.5vw, 4.5rem);
   line-height: 1.7;
 }
@@ -700,8 +710,8 @@ a { color: inherit; }
   letter-spacing: -0.032em;
   text-wrap: balance;
 }
-/* com prazo marcado, a data é uma data — e datas vêm em vermelho aqui */
-.envio[data-aberto] .envio__destaque { color: var(--vermelho-600); }
+/* com prazo marcado, a data é uma data — e datas vêm na cor da ação */
+.envio[data-aberto] .envio__destaque { color: var(--rosa-800); }
 
 .envio .botao--grande { margin-top: var(--s-xs); }
 
@@ -846,14 +856,14 @@ a { color: inherit; }
   font-stretch: 87%;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--vermelho-600);
+  color: var(--rosa-800);
 }
 .selo-aberto::before {
   content: "";
   width: 0.4375rem;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--vermelho);
+  background: var(--rosa-700);
 }
 
 .evento__responsavel {
@@ -1696,7 +1706,7 @@ a { color: inherit; }
 /* O envio, no fim da página. Era faixa escura e encostava no rodapé, também
    escuro: as duas viravam uma mancha só e o botão se perdia bem onde ele
    precisa ser visto. Como cartão claro sobre o papel, com o fio vermelho em
-   cima, ele volta a ser um objeto — e o único vermelho da página é o botão. */
+   cima, ele volta a ser um objeto — e o único rosa forte da página é o botão. */
 .secao--fecho { padding-block: clamp(1rem, 2vw, 1.5rem) var(--s-3xl); }
 
 .envio-final {
@@ -1708,7 +1718,7 @@ a { color: inherit; }
   padding: clamp(var(--s-lg), 4vw, var(--s-2xl));
   background: #fff;
   border: 1px solid var(--linha);
-  border-top: 4px solid var(--vermelho);
+  border-top: 4px solid var(--rosa-700);
   border-radius: var(--r-lg);
   box-shadow: 0 30px 60px -32px oklch(22% 0.03 146 / 0.55);
   text-align: left;
