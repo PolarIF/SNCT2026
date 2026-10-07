@@ -109,11 +109,11 @@ MIDDLEWARE = [
 ]
 
 if METRICS_ATIVO:
-    # O par tem de envolver todo o resto: o "Before" marca o início da
-    # requisição e o "After" fecha a conta. Fora dessa ordem a latência medida
-    # exclui o trabalho dos middlewares do meio.
-    MIDDLEWARE.insert(0, "django_prometheus.middleware.PrometheusBeforeMiddleware")
-    MIDDLEWARE.append("django_prometheus.middleware.PrometheusAfterMiddleware")
+    # O contrato de métricas vem do nosso middleware (nomes http_requests_total
+    # etc.), não do django-prometheus — que emitiria nomes próprios e contaria
+    # cada requisição em dobro. Os backends de banco do django-prometheus ficam
+    # (abaixo), pois medem o que o nosso não mede e não colidem.
+    MIDDLEWARE.insert(0, "config.observabilidade.ObservabilidadeMiddleware")
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
