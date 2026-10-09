@@ -17,6 +17,11 @@ class _AuditoriaContextoMixin:
     Cf-Ray da requisição vão para o change_message — o texto livre que já
     aparece no histórico de cada objeto no admin.
 
+    Dependência: o contexto (IP/Cf-Ray) é preenchido pelo ObservabilidadeMiddleware,
+    que só é instalado com METRICS_ATIVO=1. Em produção está ligado. Se for
+    desligado, a auditoria degrada para "ip=? cf_ray=?" (não falha) — o registro
+    da ação continua, só sem o enriquecimento.
+
     Como o Django guarda o change_message (confirmado empiricamente): em uma
     adição/alteração a `message` chega como LISTA de dicts estruturados (ex.:
     `[{"added": {}}]`) e o Django a serializa em JSON na coluna; em alguns
