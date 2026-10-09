@@ -46,7 +46,7 @@ não apareça na tela.
 
 ## Rodar na sua máquina
 
-Precisa de Python 3.12 ou mais novo. A imagem de produção usa 3.13.
+Precisa de Python 3.12 ou mais novo. A imagem de produção usa 3.14.
 
 ```bash
 git clone https://github.com/PolarIF/SNCT2026.git

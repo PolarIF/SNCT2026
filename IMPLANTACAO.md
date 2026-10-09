@@ -56,7 +56,7 @@ do que subir um site em que ninguém consegue entrar.
 Para gerar a `SECRET_KEY` e a senha do banco:
 
 ```bash
-docker run --rm python:3.13-slim python -c "import secrets; print(secrets.token_urlsafe(50))"
+docker run --rm python:3.14-slim python -c "import secrets; print(secrets.token_urlsafe(50))"
 ```
 
 O `.env` tem senhas dentro. Ele já está no `.gitignore`, mas convém deixá-lo

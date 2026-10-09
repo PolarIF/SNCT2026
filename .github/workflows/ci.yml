@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+
+    # Espelha a produção: o Django cai em SQLite sem DATABASE_URL, mas é em
+    # migração que os dois divergem, e é migração que quebra deploy.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: snct
+          POSTGRES_USER: snct
+          POSTGRES_PASSWORD: senha-de-teste
+        options: >-
+          --health-cmd "pg_isready -U snct -d snct"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      SECRET_KEY: chave-descartavel-de-teste
+      DEBUG: "0"
+      HTTPS_ATIVO: "0"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: postgresql://snct:senha-de-teste@localhost:5432/snct
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      # Antes dos testes, não depois: com DEBUG=0 o whitenoise usa storage com
+      # manifest, e sem ele a suíte inteira falha com "Missing staticfiles
+      # manifest entry" — que parece erro do código e não é.
+      - name: Coletar estáticos
+        run: python manage.py collectstatic --noinput
+
+      - name: Rodar os testes
+        run: python manage.py test --verbosity 2

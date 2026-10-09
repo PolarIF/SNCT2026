@@ -3,7 +3,7 @@
 # Tudo que a aplicação precisa está aqui dentro, inclusive os estáticos já
 # processados. Fora do container só ficam: o arquivo .env e o volume do banco.
 
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # Sem .pyc no disco, log saindo na hora (senão o `docker logs` fica mudo),
 # e pip sem cache para a imagem não carregar lixo.
