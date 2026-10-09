@@ -74,12 +74,12 @@
 
   <!-- ======================================================== trabalhos -->
   <!--
-    O link e o prazo NÃO se mexem aqui: vêm do banco. A organização abre, fecha
-    e troca o endereço em /painel/ → "Submissão de trabalhos" (ou em /admin/),
-    e o botão aparece sozinho, sem reimplantar o site. Aqui só se edita o texto.
+    Nada aqui é fixo além do título: cada mostra é uma linha em /painel/ →
+    "Submissão de trabalhos", com o texto, o prazo e os links dela. Abrir,
+    fechar ou trocar um endereço aparece sozinho, sem reimplantar o site.
   -->
   <section class="chamada" id="trabalhos">
-    <div class="shell chamada__grade">
+    <div class="shell">
 
       <div class="chamada__texto">
         <p class="chamada__rotulo">
@@ -89,57 +89,69 @@
 
         <h2>Envie seu trabalho para a 23ª SNCT</h2>
 
-        <p class="lead">  
-          Estudantes de todos os cursos podem inscrever seus trabalhos na SNCT! Os participantes poderão enviar <b>trabalhos completos</b> ou <b>resumos simples</b>, conforme as normas estabelecidas no Regulamento do evento.<br>
-          📌 Atenção: todos os trabalhos aprovados deverão ser obrigatoriamente apresentados na <b>modalidade banner</b>.
-          Leia o regulamento antes de submeter seu trabalho
-        </p>
+        {% if mostras|length > 1 %}
+          <p class="lead">
+            São {{ mostras|length }} mostras, cada uma com o seu regulamento, o seu
+            prazo e o seu formulário. Escolha a que combina com o seu trabalho.
+          </p>
+        {% endif %}
       </div>
 
-      <div class="envio"{% if submissao.mostra_botao %} data-aberto{% endif %}>
-        <p class="envio__rotulo">
-          {% if submissao.prazo %}Prazo de envio{% else %}Envio dos trabalhos{% endif %}
-        </p>
+      <div class="mostras">
+        {% for mostra in mostras %}
+          {% comment %}
+            O botão não vai direto ao formulário: passa pela página de
+            submissão, onde estão o regulamento e o modelo da mostra. Enviar
+            sem ler era o caminho mais curto para um trabalho recusado.
+          {% endcomment %}
+          <article class="envio"{% if mostra.mostra_botao %} data-aberto{% endif %}>
+            <h3 class="envio__nome">{{ mostra.nome }}</h3>
 
-        {% if submissao.prazo %}
-          <p class="envio__destaque">
-            <b>{{ submissao.prazo|date:"j" }}</b>
-            <span>de {{ submissao.prazo|date:"F"|lower }}</span>
-          </p>
-        {% else %}
-          <p class="envio__destaque envio__destaque--estado">
-            {% if submissao.mostra_botao %}Aberta{% else %}Em breve{% endif %}
-          </p>
-        {% endif %}
+            {% if mostra.resumo %}
+              <div class="envio__resumo">{{ mostra.resumo|texto_rico }}</div>
+            {% endif %}
 
-        {% comment %}
-          O botão não vai direto ao formulário: passa pela página de submissão,
-          onde estão o regulamento e o modelo. Enviar sem ler era o caminho
-          mais curto para um trabalho recusado na avaliação.
-        {% endcomment %}
-        {% if submissao.mostra_botao %}
-          <a class="botao botao--acao botao--grande" href="{% url 'trabalhos' %}">
-            Enviar meu trabalho <span class="seta" aria-hidden="true">→</span>
-          </a>
-          <p class="envio__nota">
-            Regulamento, modelo e formulário de envio.
-            {% if submissao.prazo %}Depois dessa data o formulário fecha.{% endif %}
-          </p>
-        {% elif tem_pagina_de_trabalhos %}
-          <a class="botao botao--linha botao--grande" href="{% url 'trabalhos' %}">
-            Ver o regulamento <span class="seta" aria-hidden="true">→</span>
-          </a>
-          <p class="envio__nota">
-            Os documentos já estão publicados. O formulário de envio abre
-            depois, na mesma página.
-          </p>
-        {% else %}
-          <p class="envio__nota">
-            O formulário e o prazo são divulgados
-            <a href="{% url 'trabalhos' %}">na página da submissão</a>. Vale
-            conferir mais perto de outubro.
-          </p>
-        {% endif %}
+            <div class="envio__pe">
+              <p class="envio__rotulo">
+                {% if mostra.prazo %}Prazo de envio{% else %}Envio dos trabalhos{% endif %}
+              </p>
+
+              {% if mostra.prazo %}
+                <p class="envio__destaque">
+                  <b>{{ mostra.prazo|date:"j" }}</b>
+                  <span>de {{ mostra.prazo|date:"F"|lower }}</span>
+                </p>
+              {% else %}
+                <p class="envio__destaque envio__destaque--estado">
+                  {% if mostra.mostra_botao %}Aberta{% else %}Em breve{% endif %}
+                </p>
+              {% endif %}
+
+              {% if mostra.mostra_botao %}
+                <a class="botao botao--acao botao--grande" href="{% url 'trabalhos' %}#{{ mostra.slug }}">
+                  Enviar meu trabalho <span class="seta" aria-hidden="true">→</span>
+                </a>
+                <p class="envio__nota">
+                  Regulamento, modelo e formulário de envio.
+                  {% if mostra.prazo %}Depois dessa data o formulário fecha.{% endif %}
+                </p>
+              {% elif mostra.tem_documento %}
+                <a class="botao botao--linha botao--grande" href="{% url 'trabalhos' %}#{{ mostra.slug }}">
+                  Ver o regulamento <span class="seta" aria-hidden="true">→</span>
+                </a>
+                <p class="envio__nota">
+                  Os documentos já estão publicados. O formulário de envio abre
+                  depois, na mesma página.
+                </p>
+              {% else %}
+                <p class="envio__nota">
+                  O formulário e o prazo são divulgados
+                  <a href="{% url 'trabalhos' %}#{{ mostra.slug }}">na página da submissão</a>.
+                </p>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
       </div>
 
     </div>

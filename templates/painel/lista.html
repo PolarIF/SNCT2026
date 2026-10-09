@@ -30,35 +30,35 @@
     </p>
   {% endif %}
 
-  {% if submissao %}
+  {% if mostras %}
     <section class="inscricoes caixa">
       <h2 class="inscricoes__titulo painel__rotulo">Submissão de trabalhos</h2>
       <ul>
-        <li class="inscricao">
-          {% if submissao.mostra_botao %}
-            <span class="estado estado--aberta">Aberta</span>
-          {% elif submissao.aberta %}
-            <span class="estado estado--falta">Falta o link</span>
-          {% else %}
-            <span class="estado estado--breve">Em breve</span>
-          {% endif %}
-
-          <div>
-            <p class="inscricao__area">Envio de trabalhos</p>
-            {% if submissao.aberta and not submissao.link %}
-              <p class="inscricao__alerta">Nenhum botão aparece no site sem o link.</p>
+        {% for m in mostras %}
+          <li class="inscricao">
+            {% if m.mostra_botao %}
+              <span class="estado estado--aberta">Aberta</span>
+            {% elif m.aberta %}
+              <span class="estado estado--falta">Falta o link</span>
             {% else %}
-              <p class="inscricao__nota">
-                Uma só para toda a semana{% if submissao.prazo %} · envios até {{ submissao.prazo|date:"d/m/Y" }}{% endif %}.
-              </p>
+              <span class="estado estado--breve">Em breve</span>
             {% endif %}
-          </div>
 
-          <p class="inscricao__acoes">
-            <a class="botao botao--linha" href="{% url 'painel:anexos' %}">Documentos</a>
-            <a class="botao botao--linha" href="{% url 'painel:submissao' %}">Alterar</a>
-          </p>
-        </li>
+            <div>
+              <p class="inscricao__area">{{ m.nome }}</p>
+              {% if m.aberta and not m.links_de_envio %}
+                <p class="inscricao__alerta">Nenhum botão aparece no site sem o link.</p>
+              {% elif m.prazo %}
+                <p class="inscricao__nota">Envios até {{ m.prazo|date:"d/m/Y" }}.</p>
+              {% endif %}
+            </div>
+
+            <p class="inscricao__acoes">
+              <a class="botao botao--linha" href="{% url 'painel:anexos' %}#{{ m.slug }}">Documentos</a>
+              <a class="botao botao--linha" href="{% url 'painel:submissao' m.slug %}">Alterar</a>
+            </p>
+          </li>
+        {% endfor %}
       </ul>
     </section>
   {% endif %}

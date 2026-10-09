@@ -2,6 +2,7 @@ from functools import wraps
 
 from django.contrib import messages
 from django.db import connection
+from django.db.models import Prefetch
 from django.http import Http404, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,9 +12,11 @@ from django.views.decorators.http import require_http_methods
 from .forms import (
     AnexoForm,
     CartaoForm,
+    EtapaFormSet,
     EventoForm,
     HorarioFormSet,
     InscricaoDaAreaForm,
+    LinkDeEnvioFormSet,
     SubmissaoForm,
 )
 from .models import (
@@ -42,31 +45,31 @@ def home(request):
         "index.html",
         {
             "cartoes": cartoes,
-            "submissao": Submissao.atual(),
-            # O botão da seção de trabalhos leva à página de submissão. Ela
-            # só vale a visita se já houver documento para ler ou baixar —
-            # documento apenas anunciado não conta.
-            "tem_pagina_de_trabalhos": Anexo.objects.com_conteudo().exists(),
+            # Uma por mostra. O cartão de cada uma decide sozinho se oferece
+            # o regulamento: só quando já há documento para ler ou baixar.
+            "mostras": Submissao.objects.prefetch_related("links"),
         },
     )
 
 
 def trabalhos(request):
-    """Página da submissão: o que ler antes, e o link do envio no fim.
+    """Página da submissão: as mostras, cada uma com o que ler, as datas e o
+    envio.
 
     Existe separada da página inicial porque o que ela carrega — regulamento,
     modelo de resumo, edital — é documento para baixar e ler com calma, e não
-    cabia num cartão da home.
+    cabia num cartão da home. As mostras ficam todas aqui, uma abaixo da
+    outra, porque /trabalhos/ é o endereço que já foi divulgado.
     """
-    submissao = Submissao.atual()
+    mostras = Submissao.objects.prefetch_related(
+        "links",
+        "etapas",
+        Prefetch("anexos", queryset=Anexo.objects.publicados(), to_attr="documentos"),
+    )
     return render(
         request,
         "trabalhos.html",
-        {
-            "submissao": submissao,
-            "anexos": Anexo.objects.publicados(),
-            "pagina": "trabalhos",
-        },
+        {"mostras": mostras, "pagina": "trabalhos"},
     )
 
 
@@ -77,7 +80,9 @@ def documento(request, slug):
     PDF no celular para conferir uma regra é atrito à toa. O PDF continua lá,
     na página de submissão — esta é a mesma coisa em HTML.
     """
-    anexo = get_object_or_404(Anexo.objects.publicados(), slug=slug)
+    anexo = get_object_or_404(
+        Anexo.objects.publicados().select_related("submissao"), slug=slug
+    )
     if not anexo.tem_pagina:
         # Sem texto não há página: o documento existe só como arquivo.
         raise Http404
@@ -184,7 +189,11 @@ def lista(request):
             "hoje": timezone.localdate(),
             # Só o superusuário mexe na submissão; para os demais o bloco nem
             # aparece — e a view de /painel/submissao/ recusa do mesmo jeito.
-            "submissao": Submissao.atual() if request.user.is_superuser else None,
+            "mostras": (
+                Submissao.objects.prefetch_related("links")
+                if request.user.is_superuser
+                else None
+            ),
         },
     )
 
@@ -233,30 +242,41 @@ def so_administrador(view):
 
 
 @so_administrador
-def submissao(request):
-    """Abre, fecha e troca o link da submissão de trabalhos.
+def submissao(request, slug):
+    """Abre, fecha e troca os links e as datas da submissão de uma mostra.
 
-    A submissão é uma só para o evento inteiro — não é de uma coordenação, e
-    sim da organização.
+    A submissão vale para a semana inteira — não é de uma coordenação, e sim
+    da organização.
     """
-    submissao = Submissao.atual()
+    submissao = get_object_or_404(Submissao, slug=slug)
 
     if request.method == "POST":
         form = SubmissaoForm(request.POST, instance=submissao)
-        if form.is_valid():
-            submissao = form.save()
+        links = LinkDeEnvioFormSet(request.POST, instance=submissao, prefix="links")
+        etapas = EtapaFormSet(request.POST, instance=submissao, prefix="etapas")
+        # Os três válidos antes de qualquer save, como no evento: gravar a
+        # mostra e só depois descobrir um link inválido deixaria meio feito.
+        if form.is_valid() and links.is_valid() and etapas.is_valid():
+            form.save()
+            links.save()
+            etapas.save()
+            # Relê do banco: `situacao` olha os links, e os da memória são os
+            # de antes do save.
+            submissao = Submissao.objects.get(pk=submissao.pk)
             messages.success(
                 request,
-                f"Submissão de trabalhos: o site passa a mostrar {submissao.situacao}.",
+                f"{submissao.nome}: o site passa a mostrar {submissao.situacao}.",
             )
             return redirect("painel:lista")
     else:
         form = SubmissaoForm(instance=submissao)
+        links = LinkDeEnvioFormSet(instance=submissao, prefix="links")
+        etapas = EtapaFormSet(instance=submissao, prefix="etapas")
 
     return render(
         request,
         "painel/submissao.html",
-        {"form": form, "submissao": submissao},
+        {"form": form, "links": links, "etapas": etapas, "submissao": submissao},
     )
 
 
@@ -332,7 +352,13 @@ def cartao_excluir(request, pk):
 
 @so_administrador
 def anexos(request):
-    return render(request, "painel/anexos.html", {"anexos": Anexo.objects.all()})
+    # Agrupados por mostra: cada uma tem o seu regulamento, e dois
+    # "Regulamento" numa lista só não diriam qual é qual.
+    return render(
+        request,
+        "painel/anexos.html",
+        {"mostras": Submissao.objects.prefetch_related("anexos")},
+    )
 
 
 @so_administrador
@@ -345,9 +371,13 @@ def anexo_novo(request):
             messages.success(request, f"Documento “{anexo.titulo}” publicado.")
             return redirect("painel:anexos")
     else:
-        # o novo entra no fim da fila, e não empatado com o primeiro
-        ultimo = Anexo.objects.order_by("-ordem").first()
-        form = AnexoForm(initial={"ordem": (ultimo.ordem + 1) if ultimo else 0})
+        # O "+ Adicionar" de cada mostra já diz de qual mostra é o documento.
+        mostra = Submissao.objects.filter(slug=request.GET.get("mostra", "")).first()
+        # o novo entra no fim da fila da mostra, e não empatado com o primeiro
+        ultimo = Anexo.objects.filter(submissao=mostra).order_by("-ordem").first()
+        form = AnexoForm(
+            initial={"submissao": mostra, "ordem": (ultimo.ordem + 1) if ultimo else 0}
+        )
 
     return render(
         request,

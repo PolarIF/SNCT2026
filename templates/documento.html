@@ -2,7 +2,7 @@
 {% load snct %}
 
 {% block titulo %}{{ anexo.titulo }} — 23ª SNCT · IFRO Campus Ariquemes{% endblock %}
-{% block descricao %}{% if anexo.descricao %}{{ anexo.descricao }}{% else %}{{ anexo.titulo }} da submissão de trabalhos da 23ª SNCT do IFRO Campus Ariquemes.{% endif %}{% endblock %}
+{% block descricao %}{% if anexo.descricao %}{{ anexo.descricao }}{% else %}{{ anexo.titulo }} da {{ anexo.submissao.nome }} da 23ª SNCT do IFRO Campus Ariquemes.{% endif %}{% endblock %}
 {% block og_titulo %}{{ anexo.titulo }} — 23ª SNCT{% endblock %}
 {% block og_descricao %}{% if anexo.descricao %}{{ anexo.descricao }}{% else %}Submissão de trabalhos da 23ª SNCT do IFRO Campus Ariquemes.{% endif %}{% endblock %}
 
@@ -10,7 +10,7 @@
 
   <section class="heroi heroi--curto">
     <div class="shell heroi__grade">
-      <p class="rotulo rotulo--claro" style="--i:0">Submissão de trabalhos</p>
+      <p class="rotulo rotulo--claro" style="--i:0">Submissão de trabalhos · {{ anexo.submissao.nome }}</p>
       <h1 style="--i:1">{{ anexo.titulo }}</h1>
       {% if anexo.descricao %}
         <p class="lead" style="--i:2">{{ anexo.descricao|campus }}</p>
@@ -21,7 +21,7 @@
   <section class="secao">
     <div class="shell">
       <p class="voltar-publico">
-        <a href="{% url 'trabalhos' %}">← Voltar para a submissão de trabalhos</a>
+        <a href="{% url 'trabalhos' %}#{{ anexo.submissao.slug }}">← Voltar para a {{ anexo.submissao.nome }}</a>
       </p>
 
       {# O mesmo documento, em arquivo, para quem preferir levar impresso. #}
@@ -37,7 +37,7 @@
       <article class="documento">{{ anexo.texto|texto_rico }}</article>
 
       <p class="documento__fim">
-        <a class="botao botao--linha" href="{% url 'trabalhos' %}#enviar">
+        <a class="botao botao--linha" href="{% url 'trabalhos' %}#{{ anexo.submissao.slug }}-envio">
           Ir para o envio <span class="seta" aria-hidden="true">→</span>
         </a>
       </p>

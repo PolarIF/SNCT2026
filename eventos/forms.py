@@ -5,8 +5,10 @@ from .models import (
     Anexo,
     Area,
     Cartao,
+    Etapa,
     Evento,
     Horario,
+    LinkDeEnvio,
     Submissao,
     areas_do_usuario,
 )
@@ -162,33 +164,91 @@ class InscricaoDaAreaForm(forms.ModelForm):
 
 
 class SubmissaoForm(forms.ModelForm):
-    """Submissão de trabalhos, no painel.
+    """A submissão de uma mostra, no painel.
 
-    Quem pode mexer é decidido na view: a submissão é uma só para o evento
-    inteiro, então ela é da organização, não de uma coordenação.
+    Quem pode mexer é decidido na view: a submissão vale para a semana
+    inteira, então ela é da organização, não de uma coordenação. Os links e
+    as datas são os dois formsets logo abaixo.
     """
-
-    link = forms.URLField(
-        label="Link da submissão",
-        required=False,
-        # Sem isso, colar o endereço sem o "https://" viraria http.
-        assume_scheme="https",
-        widget=forms.URLInput(attrs={"placeholder": "https://forms.gle/..."}),
-        help_text="Cole aqui o endereço do formulário de envio dos trabalhos.",
-    )
 
     class Meta:
         model = Submissao
-        fields = ["aberta", "link", "prazo"]
+        fields = ["nome", "resumo", "aberta", "prazo"]
         labels = {"aberta": "Submissão aberta", "prazo": "Prazo de envio"}
         help_texts = {
             "aberta": "Desmarcada, o site mostra “A submissão abre em breve”.",
             "prazo": "Opcional. Em branco, a página não fala em prazo.",
         }
         widgets = {
+            "resumo": forms.Textarea(attrs={"rows": 6}),
             # type="date" abre o seletor nativo, inclusive no celular.
             "prazo": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         }
+
+
+class LinkDeEnvioForm(forms.ModelForm):
+    url = forms.URLField(
+        label="Link do formulário",
+        # Sem isso, colar o endereço sem o "https://" viraria http.
+        assume_scheme="https",
+        widget=forms.URLInput(attrs={"placeholder": "https://forms.gle/..."}),
+    )
+
+    class Meta:
+        model = LinkDeEnvio
+        fields = ["rotulo", "url"]
+        labels = {"rotulo": "Texto do botão"}
+        widgets = {
+            "rotulo": forms.TextInput(attrs={"placeholder": "Enviar meu trabalho"}),
+        }
+
+
+LinkDeEnvioFormSet = forms.inlineformset_factory(
+    Submissao,
+    LinkDeEnvio,
+    form=LinkDeEnvioForm,
+    # Duas linhas vazias: a Empreendedora tem dois formulários (estudantes e
+    # professores), e cabe preencher os dois de uma vez, sem JavaScript.
+    extra=2,
+    can_delete=True,
+)
+
+
+class EtapaForm(forms.ModelForm):
+    class Meta:
+        model = Etapa
+        fields = ["titulo", "inicio", "fim", "descricao"]
+        labels = {"titulo": "Etapa", "inicio": "Dia", "fim": "Até"}
+        widgets = {
+            "titulo": forms.TextInput(attrs={"placeholder": "Ex.: Submissão"}),
+            "inicio": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "fim": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "descricao": forms.TextInput(
+                attrs={"placeholder": "Ex.: Envio dos trabalhos pelo formulário."}
+            ),
+        }
+
+
+_EtapaFormSet = forms.inlineformset_factory(
+    Submissao,
+    Etapa,
+    form=EtapaForm,
+    can_delete=True,
+)
+
+
+class EtapaFormSet(_EtapaFormSet):
+    """As datas de uma mostra. A ordem no site é pela data, então não importa
+    em que linha cada etapa foi escrita."""
+
+    @property
+    def extra(self):
+        # Mostra sem datas ainda vai cadastrar o cronograma inteiro: quatro
+        # linhas, que é o tamanho do cronograma da Científica. Depois disso,
+        # uma de sobra basta para acrescentar ou corrigir.
+        if self.instance.pk and self.instance.etapas.exists():
+            return 1
+        return 4
 
 
 class CartaoForm(forms.ModelForm):
@@ -253,7 +313,17 @@ class AnexoForm(forms.ModelForm):
 
     class Meta:
         model = Anexo
-        fields = ["titulo", "descricao", "arquivo", "link", "texto", "ordem", "publicado"]
+        fields = [
+            "submissao",
+            "titulo",
+            "descricao",
+            "arquivo",
+            "link",
+            "texto",
+            "ordem",
+            "publicado",
+        ]
+        labels = {"submissao": "Mostra"}
         widgets = {
             "titulo": forms.TextInput(attrs={"placeholder": "Ex.: Regulamento"}),
             "descricao": forms.TextInput(
@@ -268,6 +338,10 @@ class AnexoForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["submissao"].empty_label = "Escolha a mostra"
 
     def clean_arquivo(self):
         arquivo = self.cleaned_data.get("arquivo")

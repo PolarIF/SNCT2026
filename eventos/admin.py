@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserChangeForm as UserChangeFormPadrao
 from django.contrib.auth.forms import UserCreationForm as UserCreationFormPadrao
 from django.contrib.auth.models import Group, User
 
-from .models import Anexo, Area, Cartao, Evento, Horario, Submissao
+from .models import Anexo, Area, Cartao, Etapa, Evento, Horario, LinkDeEnvio, Submissao
 
 
 @admin.register(Area)
@@ -54,24 +54,34 @@ class AreaAdmin(admin.ModelAdmin):
         return ", ".join(nomes) or "—"
 
 
+class LinkDeEnvioInline(admin.TabularInline):
+    model = LinkDeEnvio
+    extra = 1
+
+
+class EtapaInline(admin.TabularInline):
+    model = Etapa
+    extra = 1
+
+
 @admin.register(Submissao)
 class SubmissaoAdmin(admin.ModelAdmin):
-    """A submissão é uma linha só: não se cria nem se apaga, só se edita.
+    """As mostras e a submissão de cada uma.
 
-    O caminho normal é o painel (/painel/submissao/). Isto aqui existe para o
-    caso de a organização já estar no /admin/ criando contas.
+    O caminho normal é o painel (/painel/ → Submissão de trabalhos). Isto
+    aqui existe para o caso de a organização já estar no /admin/ criando
+    contas. Não se apaga mostra por aqui: os documentos dela são PROTECT, e
+    tirar uma do ar é fechar a submissão.
     """
 
-    list_display = ["__str__", "aberta", "situacao_no_site", "prazo"]
-    fields = ["aberta", "link", "prazo"]
+    list_display = ["nome", "aberta", "situacao_no_site", "prazo", "ordem"]
+    prepopulated_fields = {"slug": ["nome"]}
+    fields = ["nome", "slug", "resumo", "aberta", "prazo", "ordem"]
+    inlines = [LinkDeEnvioInline, EtapaInline]
 
     @admin.display(description="o que aparece no site")
     def situacao_no_site(self, submissao):
         return submissao.situacao
-
-    def has_add_permission(self, request):
-        # A linha já vem criada pela migração; uma segunda não teria efeito.
-        return not Submissao.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -256,14 +266,14 @@ class AnexoAdmin(admin.ModelAdmin):
     segurança de quem já está no /admin/.
     """
 
-    list_display = ["titulo", "formato", "ordem", "publicado"]
+    list_display = ["titulo", "submissao", "formato", "ordem", "publicado"]
     prepopulated_fields = {"slug": ["titulo"]}
     list_editable = ["ordem", "publicado"]
-    list_filter = ["publicado"]
+    list_filter = ["submissao", "publicado"]
     search_fields = ["titulo", "descricao"]
 
     fieldsets = (
-        (None, {"fields": ("titulo", "descricao")}),
+        (None, {"fields": ("submissao", "titulo", "descricao")}),
         (
             "O documento",
             {
