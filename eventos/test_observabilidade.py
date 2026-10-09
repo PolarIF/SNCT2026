@@ -2,6 +2,8 @@ import json
 import logging
 from unittest import mock
 
+from django.contrib.admin.models import LogEntry
+from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
 from config.observabilidade import FormatadorJSON
@@ -157,3 +159,24 @@ class SaudeNaoVazaExcecao(TestCase):
         r = self.client.get("/saude/")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content, b"ok\n")
+
+
+@override_settings(METRICS_ATIVO=True, CIDRS_PROXY_CONFIAVEL=["127.0.0.1/32"])
+class AuditoriaAdmin(TestCase):
+    """Auditoria reduzida: o LogEntry do admin carrega IP e Cf-Ray no texto do
+    change_message, que é o campo livre do histórico — sem subsistema novo."""
+
+    def setUp(self):
+        User.objects.create_superuser("chefe", "c@x.com", "segredo123")
+        self.client.force_login(User.objects.get(username="chefe"))
+
+    def test_log_entry_registra_ip_e_cf_ray(self):
+        self.client.post(
+            "/admin/eventos/area/add/",
+            {"nome": "Robótica", "slug": "robotica", "ativo": "on",
+             "gestores": [], "link_inscricao": ""},
+            HTTP_CF_RAY="8a1b2c3d4e5f6789-GRU", REMOTE_ADDR="127.0.0.1",
+        )
+        entrada = LogEntry.objects.latest("id")
+        self.assertIn("8a1b2c3d4e5f6789-GRU", entrada.change_message)
+        self.assertIn("127.0.0.1", entrada.change_message)
