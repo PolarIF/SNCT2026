@@ -141,3 +141,19 @@ class VerboCruNoLogNormalizadoNaMetrica(TestCase):
         corpo = self.client.get("/metrics").content.decode()
         self.assertIn('method="<desconhecido>"', corpo)        # métrica: normalizado
         self.assertNotIn('method="VERBOX"', corpo)
+
+
+class SaudeNaoVazaExcecao(TestCase):
+    def test_503_nao_contem_o_texto_da_excecao(self):
+        alvo = "eventos.views.connection.ensure_connection"
+        with mock.patch(alvo, side_effect=Exception("senha=supersecreta host=10.0.0.9")):
+            r = self.client.get("/saude/")
+        self.assertEqual(r.status_code, 503)
+        corpo = r.content.decode()
+        self.assertNotIn("supersecreta", corpo)
+        self.assertNotIn("10.0.0.9", corpo)
+
+    def test_200_quando_banco_responde(self):
+        r = self.client.get("/saude/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content, b"ok\n")
