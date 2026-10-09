@@ -9,6 +9,8 @@ três. As métricas de BANCO do django-prometheus ficam (não colidem).
 from __future__ import annotations
 
 import ipaddress
+import json
+import logging
 import re
 import time
 import uuid
@@ -16,6 +18,41 @@ from contextvars import ContextVar
 
 from django.conf import settings
 from prometheus_client import Counter, Histogram
+
+# A linha de acesso sai por este logger (configurado em settings.LOGGING para o
+# stdout, em JSON). Separado do root de propósito: um dia alguém baixa só a
+# linha de acesso sem baixar o resto, ou a manda para outro destino.
+_log_acesso = logging.getLogger("snct.acesso")
+
+# Os atributos que todo LogRecord já traz. Tudo que sobra em `vars(record)` além
+# destes foi posto por nós via `extra=` — é o que vira o bloco "extra" do JSON.
+_ATRIB_PADRAO = set(vars(logging.makeLogRecord({})).keys()) | {"message", "asctime"}
+
+
+class FormatadorJSON(logging.Formatter):
+    """Uma linha JSON por registro, com o `extra` separado em campos.
+
+    Por que JSON e não texto: o coletor (Loki/promtail) indexa por campo sem
+    regex frágil, e a linha de acesso casa com o Cf-Ray das métricas e do trace.
+    """
+
+    def format(self, record):
+        payload = {
+            "time": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        extra = {k: v for k, v in vars(record).items() if k not in _ATRIB_PADRAO}
+        # Emitimos com extra={"extra": {...}}, então o dict real vem aninhado uma
+        # vez. Desaninha para não virar {"extra": {"extra": {...}}} no JSON.
+        if "extra" in extra and isinstance(extra["extra"], dict):
+            payload["extra"] = extra["extra"]
+        elif extra:
+            payload["extra"] = extra
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, default=str)
 
 # Os mesmos onze buckets dos outros dois projetos. Buckets diferentes tornam
 # impossível comparar latência entre eles.
@@ -106,6 +143,26 @@ def _resolver_ip(request) -> str:
     return remote or "desconhecido"
 
 
+def _rota_de(request) -> str:
+    """O template da rota (ex.: /trabalhos/<slug:slug>/), nunca o caminho cru.
+
+    Extraída da Task 1 para a métrica e a linha de acesso partirem do mesmo
+    valor. resolver_match.route não leva a barra inicial; normaliza para casar
+    o estilo dos outros projetos. Sem match (404), cai em <desconhecida>.
+    """
+    match = getattr(request, "resolver_match", None)
+    rota = getattr(match, "route", None)
+    if rota is None:
+        return ROTA_DESCONHECIDA
+    return rota if rota.startswith("/") else "/" + rota
+
+
+def _metodo_de(request) -> str:
+    """O verbo HTTP, com os inventados caindo no balde <desconhecido>."""
+    metodo = request.method or "GET"
+    return metodo if metodo in METODOS_CONHECIDOS else METODO_DESCONHECIDO
+
+
 class ObservabilidadeMiddleware:
     """Emite as duas métricas do contrato por requisição HTTP.
 
@@ -128,20 +185,30 @@ class ObservabilidadeMiddleware:
         duracao = time.perf_counter() - inicio
 
         caminho = request.path
-        if caminho not in CAMINHOS_NAO_MEDIDOS:
-            match = getattr(request, "resolver_match", None)
-            rota = getattr(match, "route", None)
-            # resolver_match.route não leva a barra inicial; normaliza para
-            # casar o estilo dos outros projetos.
-            if rota is not None:
-                rota = "/" + rota if not rota.startswith("/") else rota
-            else:
-                rota = ROTA_DESCONHECIDA
-            metodo = request.method or "GET"
-            if metodo not in METODOS_CONHECIDOS:
-                metodo = METODO_DESCONHECIDO
+        infra = caminho in CAMINHOS_NAO_MEDIDOS
+        metodo = _metodo_de(request)
+        # Para os caminhos de infra a rota é o próprio caminho (fixo); para os
+        # demais, o template resolvido. Um único cálculo serve à métrica e à
+        # linha de acesso, sem recapturar nada.
+        rota = caminho if infra else _rota_de(request)
+
+        if not infra:
             codigo = str(response.status_code)
             REQUISICOES.labels(method=metodo, route=rota, status=codigo).inc()
             DURACAO.labels(method=metodo, route=rota).observe(duracao)
+
+        # A linha de acesso sai dos MESMOS valores já capturados. Para os
+        # caminhos de infra, suprime só o 200 (a raspagem e o healthcheck de
+        # rotina dominariam o log); uma recusa (403/503) nesses caminhos AINDA
+        # registra — é justamente o que se quer ver.
+        if not (infra and response.status_code == 200):
+            _log_acesso.info("requisicao atendida", extra={"extra": {
+                "request_id": request.cf_ray,
+                "client_ip": request.client_ip,
+                "method": metodo,
+                "route": rota,
+                "status": response.status_code,
+                "duration_ms": round(duracao * 1000, 2),
+            }})
 
         return response

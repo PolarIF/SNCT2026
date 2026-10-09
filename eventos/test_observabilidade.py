@@ -1,4 +1,10 @@
+import json
+import logging
+from unittest import mock
+
 from django.test import TestCase, override_settings
+
+from config.observabilidade import FormatadorJSON
 
 
 @override_settings(METRICS_ATIVO=True)
@@ -79,3 +85,45 @@ class ClientIpValidado(TestCase):
                             HTTP_CF_CONNECTING_IP="203.0.113.55",
                             REMOTE_ADDR="127.0.0.1")
         self.assertEqual(r.wsgi_request.client_ip, "203.0.113.55")
+
+
+def _json_do(registro):
+    """O JSON que o FormatadorJSON realmente emitiria para este registro.
+
+    Validar por aqui (e não pelo LogRecord cru) é o ponto: um `extra` aninhado
+    errado passaria no record cru e só o format() revelaria."""
+    return json.loads(FormatadorJSON().format(registro))
+
+
+@override_settings(METRICS_ATIVO=True, CIDRS_PROXY_CONFIAVEL=["127.0.0.1/32"])
+class LinhaDeAcesso(TestCase):
+    def test_linha_de_acesso_sai_em_json_com_os_campos(self):
+        with self.assertLogs("snct.acesso", level="INFO") as cap:
+            self.client.get("/cronograma/", HTTP_CF_RAY="8a1b2c3d4e5f6789-GRU",
+                            REMOTE_ADDR="127.0.0.1")
+        linha = _json_do(cap.records[-1])
+        self.assertEqual(linha["extra"]["request_id"], "8a1b2c3d4e5f6789-GRU")
+        self.assertEqual(linha["extra"]["route"], "/cronograma/")
+        self.assertEqual(linha["extra"]["status"], 200)
+        self.assertIsInstance(linha["extra"]["status"], int)
+        self.assertEqual(linha["extra"]["method"], "GET")
+        self.assertIn("duration_ms", linha["extra"])
+        self.assertIn("client_ip", linha["extra"])
+
+    def test_raspagem_de_rotina_nao_gera_linha_de_acesso(self):
+        with self.assertLogs("snct.acesso", level="INFO") as cap:
+            logging.getLogger("snct.acesso").info("sentinela")  # garante ≥1
+            self.client.get("/metrics", REMOTE_ADDR="127.0.0.1")
+        rotas = [_json_do(r).get("extra", {}).get("route") for r in cap.records]
+        self.assertNotIn("/metrics", rotas)
+
+    def test_raspagem_recusada_gera_linha_de_acesso(self):
+        # Uma recusa (503) num caminho de infra AINDA registra — só o 200 de
+        # rotina é suprimido. Força o /saude/ a falhar no banco.
+        with mock.patch("eventos.views.connection.ensure_connection",
+                        side_effect=Exception("banco fora")):
+            with self.assertLogs("snct.acesso", level="INFO") as cap:
+                self.client.get("/saude/", REMOTE_ADDR="127.0.0.1")
+        linha = _json_do(cap.records[-1])
+        self.assertEqual(linha["extra"]["route"], "/saude/")
+        self.assertEqual(linha["extra"]["status"], 503)

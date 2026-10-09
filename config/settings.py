@@ -253,3 +253,22 @@ if not DEBUG:
 
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+# ---------------------------------------------------------------------- logging
+
+# Tudo sai em JSON de uma linha no stdout — o container entrega ao coletor
+# (Loki/promtail), que indexa por campo. A linha de acesso (logger snct.acesso,
+# emitida pelo ObservabilidadeMiddleware) carrega o Cf-Ray, casando com as
+# métricas e com a auditoria.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"json": {"()": "config.observabilidade.FormatadorJSON"}},
+    "handlers": {"stdout": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "root": {"handlers": ["stdout"], "level": "INFO"},
+    "loggers": {
+        "snct.acesso": {"handlers": ["stdout"], "level": "INFO", "propagate": False},
+        # A linha de acesso do gunicorn sairia em texto, duplicando a nossa.
+        "gunicorn.access": {"handlers": [], "level": "CRITICAL", "propagate": False},
+    },
+}
