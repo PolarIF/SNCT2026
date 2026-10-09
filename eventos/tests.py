@@ -15,7 +15,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse, reverse_lazy
 
-from .models import Anexo, Area, Cartao, Evento, Horario, Submissao
+from .models import Anexo, Area, Cartao, Etapa, Evento, Horario, LinkDeEnvio, Submissao
 
 
 class Base(TestCase):
@@ -28,6 +28,15 @@ class Base(TestCase):
         # em silêncio, o cartão que fala dele.
         Cartao.objects.all().delete()
         Area.objects.all().delete()
+
+        # As duas mostras ficam — são linhas fixas, criadas pela migração —,
+        # mas sem as datas que a migração copiou do HTML antigo: cada teste
+        # diz o que a mostra tem. O que a migração semeia é testado à parte,
+        # em MostrasSemeadas.
+        Etapa.objects.all().delete()
+        LinkDeEnvio.objects.all().delete()
+        cls.cientifica = Submissao.objects.get(slug="mostra-cientifica")
+        cls.empreendedora = Submissao.objects.get(slug="mostra-empreendedora-e-tecnologica")
 
         cls.ads = Area.objects.create(nome="ADS", slug="ads")
         cls.info = Area.objects.create(nome="Informática", slug="informatica")
@@ -73,6 +82,15 @@ class Base(TestCase):
     def entrar(self, usuario):
         ok = self.client.login(username=usuario, password="senha-de-teste-123")
         self.assertTrue(ok, f"{usuario} deveria conseguir entrar")
+
+    def abrir(self, mostra=None, url="https://forms.exemplo.invalid/trabalhos", prazo=None):
+        """Abre a submissão de uma mostra (a Científica, se nenhuma for dita)."""
+        mostra = mostra or self.cientifica
+        mostra.aberta = True
+        mostra.prazo = prazo
+        mostra.save()
+        LinkDeEnvio.objects.create(submissao=mostra, rotulo="Enviar meu trabalho", url=url)
+        return mostra
 
     def dados(self, **troca):
         """O POST do formulário de evento, com o formset de horários junto.
@@ -342,12 +360,14 @@ class InscricaoPeloPainel(Base):
 
 
 class SubmissaoNaHome(Base):
-    """A submissão de trabalhos é uma só, e é dado — não HTML."""
+    """A submissão é uma por mostra, e é dado — não HTML."""
 
     def test_fechada_mostra_em_breve_e_nao_vaza_link(self):
-        s = Submissao.atual()
-        s.link = "https://forms.exemplo.invalid/trabalhos"
-        s.save()
+        LinkDeEnvio.objects.create(
+            submissao=self.cientifica,
+            rotulo="Enviar",
+            url="https://forms.exemplo.invalid/trabalhos",
+        )
 
         r = self.client.get(reverse("home"))
         self.assertContains(r, "Em breve")
@@ -355,42 +375,70 @@ class SubmissaoNaHome(Base):
         self.assertNotContains(r, "Enviar meu trabalho")
 
     def test_aberta_com_link_mostra_o_botao(self):
-        s = Submissao.atual()
-        s.aberta = True
-        s.link = "https://forms.exemplo.invalid/trabalhos"
-        s.save()
+        self.abrir()
 
         r = self.client.get(reverse("home"))
         self.assertContains(r, "Enviar meu trabalho")
-        # o botão leva à página de submissão, e não direto ao formulário
-        self.assertContains(r, f'href="{reverse("trabalhos")}"')
+        # o botão leva à mostra na página de submissão, e não direto ao formulário
+        self.assertContains(r, f'href="{reverse("trabalhos")}#mostra-cientifica"')
         self.assertNotContains(r, "https://forms.exemplo.invalid/trabalhos")
         # sem prazo marcado, o lugar grande do cartão diz o estado
         self.assertContains(r, "Aberta")
 
     def test_aberta_sem_link_nao_gera_botao_vazio(self):
-        s = Submissao.atual()
-        s.aberta = True
-        s.save()
+        self.cientifica.aberta = True
+        self.cientifica.save()
 
         r = self.client.get(reverse("home"))
         self.assertContains(r, "Em breve")
         self.assertNotContains(r, "Enviar meu trabalho")
         self.assertNotContains(r, 'href=""')
-        self.assertIs(s.mostra_botao, False)
+        self.assertIs(self.cientifica.mostra_botao, False)
 
     def test_prazo_so_aparece_quando_preenchido(self):
-        s = Submissao.atual()
-        s.aberta = True
-        s.link = "https://forms.exemplo.invalid/trabalhos"
-        s.save()
-        self.assertNotContains(self.client.get(reverse("home")), "Envios at\u00e9")
+        self.abrir()
+        self.assertNotContains(self.client.get(reverse("home")), "Prazo de envio")
 
-        s.prazo = date(2026, 10, 10)
-        s.save()
+        self.cientifica.prazo = date(2026, 10, 10)
+        self.cientifica.save()
         r = self.client.get(reverse("home"))
         self.assertContains(r, "Prazo de envio")
         self.assertContains(r, "de outubro")
+
+    def test_as_duas_mostras_tem_cartao_proprio(self):
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "Mostra Científica")
+        self.assertContains(r, "Mostra Empreendedora e Tecnológica")
+        self.assertContains(r, "São 2 mostras")
+
+    def test_uma_mostra_aberta_nao_abre_a_outra(self):
+        self.abrir(self.cientifica)
+
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertEqual(html.count("Enviar meu trabalho"), 1)
+        # o botão que existe é o da Científica, e o cartão da Empreendedora
+        # continua dizendo "em breve"
+        cartao_empreendedora = html[html.index("Mostra Empreendedora e Tecnológica</h3>"):]
+        self.assertNotIn("Enviar meu trabalho", cartao_empreendedora)
+        self.assertIn("Em breve", cartao_empreendedora)
+
+    def test_cada_cartao_leva_a_propria_mostra(self):
+        self.abrir(self.cientifica)
+        self.abrir(self.empreendedora, url="https://forms.exemplo.invalid/empreende")
+
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, f'href="{reverse("trabalhos")}#mostra-cientifica"')
+        self.assertContains(
+            r, f'href="{reverse("trabalhos")}#mostra-empreendedora-e-tecnologica"'
+        )
+
+    def test_o_texto_da_mostra_vem_do_painel(self):
+        self.empreendedora.resumo = "Projetos de **inovação** e <script>x</script>."
+        self.empreendedora.save()
+
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "<b>inovação</b>")
+        self.assertNotContains(r, "<script>x</script>")
 
     def test_a_secao_aparece_antes_da_programacao(self):
         # a submissão é a primeira seção da página, e é isso que o pedido era
@@ -407,36 +455,182 @@ class SubmissaoNaHome(Base):
 
 
 class SubmissaoPeloPainel(Base):
-    """Quem mexe na submissão é a organização: ela vale para o evento inteiro."""
+    """Quem mexe na submissão é a organização: ela vale para a semana inteira."""
 
-    url = reverse_lazy("painel:submissao")
+    url = reverse_lazy("painel:submissao", args=["mostra-cientifica"])
+
+    def dados(self, links=(), etapas=(), **troca):
+        """O POST da tela da mostra, com os dois formsets e os campos de gestão.
+
+        `links` é uma lista de (texto do botão, endereço); `etapas`, de
+        (etapa, início, fim). Linhas novas só — os testes partem de mostra
+        sem link e sem data.
+        """
+        base = {
+            "nome": "Mostra Científica",
+            "resumo": "",
+            "prazo": "",
+            "links-TOTAL_FORMS": str(len(links)),
+            "links-INITIAL_FORMS": "0",
+            "links-MIN_NUM_FORMS": "0",
+            "links-MAX_NUM_FORMS": "1000",
+            "etapas-TOTAL_FORMS": str(len(etapas)),
+            "etapas-INITIAL_FORMS": "0",
+            "etapas-MIN_NUM_FORMS": "0",
+            "etapas-MAX_NUM_FORMS": "1000",
+        }
+        for i, (rotulo, url) in enumerate(links):
+            base[f"links-{i}-rotulo"] = rotulo
+            base[f"links-{i}-url"] = url
+        for i, (titulo, inicio, fim) in enumerate(etapas):
+            base[f"etapas-{i}-titulo"] = titulo
+            base[f"etapas-{i}-inicio"] = inicio
+            base[f"etapas-{i}-fim"] = fim
+            base[f"etapas-{i}-descricao"] = ""
+        base.update(troca)
+        return base
+
+    def recarregar(self):
+        return Submissao.objects.get(pk=self.cientifica.pk)
 
     def test_administrador_abre_a_submissao(self):
         self.entrar("admin")
         r = self.client.post(
             self.url,
-            {"aberta": "on", "link": "https://forms.exemplo.invalid/trabalhos", "prazo": ""},
+            self.dados(
+                aberta="on",
+                links=[("Enviar meu trabalho", "https://forms.exemplo.invalid/trabalhos")],
+            ),
         )
         self.assertEqual(r.status_code, 302)
 
-        s = Submissao.atual()
+        s = self.recarregar()
         self.assertTrue(s.aberta)
-        self.assertEqual(s.link, "https://forms.exemplo.invalid/trabalhos")
+        self.assertEqual(
+            [l.url for l in s.links.all()], ["https://forms.exemplo.invalid/trabalhos"]
+        )
+        self.assertTrue(s.mostra_botao)
 
     def test_link_sem_esquema_vira_https(self):
         self.entrar("admin")
         self.client.post(
-            self.url, {"aberta": "on", "link": "forms.exemplo.invalid/trabalhos", "prazo": ""}
+            self.url,
+            self.dados(aberta="on", links=[("Enviar", "forms.exemplo.invalid/trabalhos")]),
         )
         self.assertEqual(
-            Submissao.atual().link, "https://forms.exemplo.invalid/trabalhos"
+            self.recarregar().links.get().url, "https://forms.exemplo.invalid/trabalhos"
         )
 
     def test_link_invalido_e_recusado(self):
         self.entrar("admin")
-        r = self.client.post(self.url, {"aberta": "on", "link": "isto não é um link", "prazo": ""})
+        r = self.client.post(
+            self.url, self.dados(aberta="on", links=[("Enviar", "isto não é um link")])
+        )
         self.assertEqual(r.status_code, 200)
-        self.assertFalse(Submissao.atual().aberta)
+        # nada é gravado pela metade: nem a mostra abre, nem o link entra
+        self.assertFalse(self.recarregar().aberta)
+        self.assertFalse(LinkDeEnvio.objects.exists())
+
+    def test_linha_vazia_e_ignorada(self):
+        self.entrar("admin")
+        r = self.client.post(
+            self.url,
+            self.dados(aberta="on", links=[("Enviar", "https://forms.exemplo.invalid/a"), ("", "")]),
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(self.recarregar().links.count(), 1)
+
+    def test_link_sem_texto_do_botao_e_recusado(self):
+        self.entrar("admin")
+        r = self.client.post(
+            self.url, self.dados(links=[("", "https://forms.exemplo.invalid/a")])
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(LinkDeEnvio.objects.exists())
+
+    def test_dois_links_viram_dois_botoes(self):
+        # o caso da Empreendedora: um formulário para estudantes, outro para
+        # professores
+        self.entrar("admin")
+        url = reverse("painel:submissao", args=[self.empreendedora.slug])
+        r = self.client.post(
+            url,
+            self.dados(
+                nome="Mostra Empreendedora e Tecnológica",
+                aberta="on",
+                links=[
+                    ("Sou estudante", "https://forms.exemplo.invalid/estudantes"),
+                    ("Sou professor", "https://forms.exemplo.invalid/professores"),
+                ],
+            ),
+        )
+        self.assertEqual(r.status_code, 302)
+
+        html = self.client.get(reverse("trabalhos")).content.decode()
+        self.assertLess(html.index("Sou estudante"), html.index("Sou professor"))
+        self.assertIn("https://forms.exemplo.invalid/estudantes", html)
+        self.assertIn("https://forms.exemplo.invalid/professores", html)
+        # e a Científica, que ninguém abriu, continua sem botão
+        self.assertFalse(self.recarregar().mostra_botao)
+
+    def test_remover_o_unico_link_tira_o_botao(self):
+        link = LinkDeEnvio.objects.create(
+            submissao=self.cientifica, rotulo="Enviar", url="https://forms.exemplo.invalid/a"
+        )
+        self.entrar("admin")
+        dados = self.dados(aberta="on")
+        dados.update(
+            {
+                "links-TOTAL_FORMS": "1",
+                "links-INITIAL_FORMS": "1",
+                "links-0-id": str(link.pk),
+                "links-0-rotulo": "Enviar",
+                "links-0-url": "https://forms.exemplo.invalid/a",
+                "links-0-DELETE": "on",
+            }
+        )
+        self.assertEqual(self.client.post(self.url, dados).status_code, 302)
+        self.assertFalse(LinkDeEnvio.objects.exists())
+        self.assertIn("sem link", self.recarregar().situacao)
+
+    def test_as_datas_saem_em_ordem_de_data(self):
+        self.entrar("admin")
+        r = self.client.post(
+            self.url,
+            self.dados(
+                etapas=[
+                    ("Resultado final", "2026-10-22", ""),
+                    ("Submissão", "2026-09-24", "2026-10-12"),
+                ]
+            ),
+        )
+        self.assertEqual(r.status_code, 302)
+
+        html = self.client.get(reverse("trabalhos")).content.decode()
+        self.assertLess(html.index("Submissão</h4>"), html.index("Resultado final</h4>"))
+        self.assertIn('<time datetime="2026-09-24">24/09</time>', html)
+
+    def test_etapa_que_termina_antes_de_comecar_e_recusada(self):
+        self.entrar("admin")
+        r = self.client.post(
+            self.url, self.dados(etapas=[("Avaliação", "2026-10-15", "2026-10-01")])
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Etapa.objects.exists())
+
+    def test_mostra_sem_datas_oferece_o_cronograma_inteiro(self):
+        self.entrar("admin")
+        r = self.client.get(self.url)
+        self.assertEqual(r.context["etapas"].total_form_count(), 4)
+
+        Etapa.objects.create(submissao=self.cientifica, titulo="Envio", inicio=date(2026, 10, 1))
+        r = self.client.get(self.url)
+        self.assertEqual(r.context["etapas"].total_form_count(), 2)
+
+    def test_mostra_que_nao_existe_da_404(self):
+        self.entrar("admin")
+        url = reverse("painel:submissao", args=["mostra-que-nao-existe"])
+        self.assertEqual(self.client.get(url).status_code, 404)
 
     def test_coordenacao_nao_abre_a_tela(self):
         self.entrar("coord_ads")
@@ -445,15 +639,18 @@ class SubmissaoPeloPainel(Base):
     def test_coordenacao_nao_altera_por_post_direto(self):
         self.entrar("coord_ads")
         r = self.client.post(
-            self.url, {"aberta": "on", "link": "https://invasao.exemplo.invalid/", "prazo": ""}
+            self.url,
+            self.dados(aberta="on", links=[("Enviar", "https://invasao.exemplo.invalid/")]),
         )
         self.assertEqual(r.status_code, 404)
-        self.assertFalse(Submissao.atual().aberta)
-        self.assertEqual(Submissao.atual().link, "")
+        self.assertFalse(self.recarregar().aberta)
+        self.assertFalse(LinkDeEnvio.objects.exists())
 
     def test_o_bloco_so_aparece_para_o_administrador(self):
         self.entrar("admin")
-        self.assertContains(self.client.get(reverse("painel:lista")), "Submissão de trabalhos")
+        r = self.client.get(reverse("painel:lista"))
+        self.assertContains(r, "Submissão de trabalhos")
+        self.assertContains(r, "Mostra Empreendedora e Tecnológica")
 
         self.client.logout()
         self.entrar("coord_ads")
@@ -461,12 +658,16 @@ class SubmissaoPeloPainel(Base):
         self.assertNotContains(r, "Submissão de trabalhos")
 
     def test_abrir_no_painel_muda_a_pagina_inicial(self):
-        self.assertContains(self.client.get(reverse("home")), "Em breve")
+        self.assertNotContains(self.client.get(reverse("home")), "Enviar meu trabalho")
 
         self.entrar("admin")
         self.client.post(
             self.url,
-            {"aberta": "on", "link": "https://forms.exemplo.invalid/t", "prazo": "2026-10-10"},
+            self.dados(
+                aberta="on",
+                prazo="2026-10-10",
+                links=[("Enviar meu trabalho", "https://forms.exemplo.invalid/t")],
+            ),
         )
 
         self.client.logout()
@@ -478,13 +679,6 @@ class SubmissaoPeloPainel(Base):
         self.assertContains(
             self.client.get(reverse("trabalhos")), "https://forms.exemplo.invalid/t"
         )
-
-    def test_e_sempre_a_mesma_linha(self):
-        # o modelo é de uma linha só: salvar de novo não cria uma segunda
-        Submissao.atual().save()
-        Submissao(aberta=True, link="https://forms.exemplo.invalid/x").save()
-        self.assertEqual(Submissao.objects.count(), 1)
-        self.assertTrue(Submissao.atual().aberta)
 
 
 class CartoesNaHome(Base):
@@ -721,26 +915,78 @@ class PaginaDeTrabalhos(Base):
         # montam o próprio cenário. O delete volta atrás no fim de cada teste.
         Anexo.objects.all().delete()
 
-    def abrir(self):
-        s = Submissao.atual()
-        s.aberta = True
-        s.link = "https://forms.exemplo.invalid/trabalhos"
-        s.save()
-        return s
-
-    def test_a_pagina_existe_mesmo_sem_documento_nenhum(self):
+    def test_a_pagina_existe_mesmo_sem_nada_publicado(self):
         r = self.client.get(self.url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "ainda não foram publicados")
+        # um aviso por mostra, e não três caixas vazias seguidas
+        self.assertContains(r, "Esta mostra ainda vai abrir", count=2)
 
     def test_fechada_nao_vaza_o_link_do_formulario(self):
-        s = Submissao.atual()
-        s.link = "https://forms.exemplo.invalid/trabalhos"
-        s.save()
+        LinkDeEnvio.objects.create(
+            submissao=self.cientifica, rotulo="Enviar", url="https://forms.exemplo.invalid/trabalhos"
+        )
+        Anexo.objects.create(
+            submissao=self.cientifica, titulo="Regulamento", link="https://exemplo.invalid/reg.pdf"
+        )
 
         r = self.client.get(self.url)
         self.assertNotContains(r, "forms.exemplo.invalid")
         self.assertContains(r, "abre em breve")
+
+    def test_as_duas_mostras_estao_na_pagina_em_ordem(self):
+        html = self.client.get(self.url).content.decode()
+        self.assertLess(
+            html.index('id="mostra-cientifica"'),
+            html.index('id="mostra-empreendedora-e-tecnologica"'),
+        )
+        # e os atalhos do topo apontam para cada uma
+        self.assertIn('href="#mostra-cientifica"', html)
+        self.assertIn('href="#mostra-empreendedora-e-tecnologica"', html)
+
+    def test_cada_documento_fica_na_sua_mostra(self):
+        Anexo.objects.create(
+            submissao=self.cientifica, titulo="Regulamento científico",
+            link="https://exemplo.invalid/c.pdf",
+        )
+        Anexo.objects.create(
+            submissao=self.empreendedora, titulo="Regulamento empreendedor",
+            link="https://exemplo.invalid/e.pdf",
+        )
+
+        html = self.client.get(self.url).content.decode()
+        divisa = html.index('id="mostra-empreendedora-e-tecnologica"')
+        self.assertLess(html.index("Regulamento científico"), divisa)
+        self.assertGreater(html.index("Regulamento empreendedor"), divisa)
+
+    def test_uma_mostra_aberta_nao_vaza_o_link_da_outra(self):
+        self.abrir(self.empreendedora, url="https://forms.exemplo.invalid/empreende")
+        LinkDeEnvio.objects.create(
+            submissao=self.cientifica, rotulo="Enviar", url="https://forms.exemplo.invalid/ciencia"
+        )
+
+        r = self.client.get(self.url)
+        self.assertContains(r, "https://forms.exemplo.invalid/empreende")
+        self.assertNotContains(r, "https://forms.exemplo.invalid/ciencia")
+
+    def test_mostra_sem_datas_avisa_que_vao_ser_divulgadas(self):
+        Anexo.objects.create(
+            submissao=self.cientifica, titulo="Regulamento", link="https://exemplo.invalid/r.pdf"
+        )
+        r = self.client.get(self.url)
+        self.assertContains(r, "As datas desta mostra são divulgadas aqui")
+
+    def test_a_ultima_etapa_e_a_que_fica_em_destaque(self):
+        Etapa.objects.create(submissao=self.cientifica, titulo="Resultado", inicio=date(2026, 10, 22))
+        Etapa.objects.create(
+            submissao=self.cientifica, titulo="Envio",
+            inicio=date(2026, 9, 24), fim=date(2026, 10, 12),
+        )
+
+        html = self.client.get(self.url).content.decode()
+        self.assertLess(html.index("Envio</h4>"), html.index("Resultado</h4>"))
+        destaque = html.index("etapa--fecho")
+        self.assertLess(html.index("Envio</h4>"), destaque)
+        self.assertLess(destaque, html.index("Resultado</h4>"))
 
     def test_aberta_mostra_o_botao_de_envio(self):
         self.abrir()
@@ -750,30 +996,33 @@ class PaginaDeTrabalhos(Base):
 
     def test_os_documentos_vem_antes_do_botao_de_envio(self):
         self.abrir()
-        Anexo.objects.create(titulo="Regulamento", link="https://exemplo.invalid/reg.pdf")
+        Anexo.objects.create(
+            submissao=self.cientifica, titulo="Regulamento", link="https://exemplo.invalid/reg.pdf"
+        )
 
         html = self.client.get(self.url).content.decode()
-        self.assertLess(html.index("Regulamento"), html.index('id="enviar"'))
+        self.assertLess(html.index("Regulamento</h4>"), html.index('id="mostra-cientifica-envio"'))
 
     def test_documento_fora_do_ar_nao_aparece(self):
         Anexo.objects.create(
+            submissao=self.cientifica,
             titulo="Edital antigo", link="https://exemplo.invalid/velho.pdf", publicado=False
         )
-        Anexo.objects.create(titulo="Regulamento", link="https://exemplo.invalid/reg.pdf")
+        Anexo.objects.create(submissao=self.cientifica, titulo="Regulamento", link="https://exemplo.invalid/reg.pdf")
 
         r = self.client.get(self.url)
         self.assertContains(r, "Regulamento")
         self.assertNotContains(r, "Edital antigo")
 
     def test_a_ordem_e_a_do_campo_ordem(self):
-        Anexo.objects.create(titulo="Segundo", link="https://exemplo.invalid/2", ordem=2)
-        Anexo.objects.create(titulo="Primeiro", link="https://exemplo.invalid/1", ordem=1)
+        Anexo.objects.create(submissao=self.cientifica, titulo="Segundo", link="https://exemplo.invalid/2", ordem=2)
+        Anexo.objects.create(submissao=self.cientifica, titulo="Primeiro", link="https://exemplo.invalid/1", ordem=1)
 
         html = self.client.get(self.url).content.decode()
         self.assertLess(html.index("Primeiro"), html.index("Segundo"))
 
     def test_arquivo_enviado_e_servido_pelo_site(self):
-        anexo = Anexo(titulo="Regulamento")
+        anexo = Anexo(submissao=self.cientifica, titulo="Regulamento")
         anexo.arquivo.save("regulamento.pdf", SimpleUploadedFile("regulamento.pdf", b"%PDF-1.4 "))
 
         r = self.client.get(self.url)
@@ -785,7 +1034,7 @@ class PaginaDeTrabalhos(Base):
         self.assertNotContains(r, "Abrir")
 
     def test_documento_de_fora_abre_em_outra_aba(self):
-        Anexo.objects.create(titulo="Pasta no Drive", link="https://drive.exemplo.invalid/pasta")
+        Anexo.objects.create(submissao=self.cientifica, titulo="Pasta no Drive", link="https://drive.exemplo.invalid/pasta")
 
         r = self.client.get(self.url)
         self.assertContains(r, "https://drive.exemplo.invalid/pasta")
@@ -793,6 +1042,7 @@ class PaginaDeTrabalhos(Base):
 
     def test_o_texto_do_documento_sai_escapado(self):
         Anexo.objects.create(
+            submissao=self.cientifica,
             titulo="Regulamento",
             descricao="<script>alert(1)</script>",
             link="https://exemplo.invalid/reg.pdf",
@@ -805,7 +1055,7 @@ class PaginaDeTrabalhos(Base):
         # fechada e sem documento: nada a visitar, só o aviso
         self.assertNotContains(self.client.get(reverse("home")), "Ver o regulamento")
 
-        Anexo.objects.create(titulo="Regulamento", link="https://exemplo.invalid/reg.pdf")
+        Anexo.objects.create(submissao=self.cientifica, titulo="Regulamento", link="https://exemplo.invalid/reg.pdf")
         self.assertContains(self.client.get(reverse("home")), "Ver o regulamento")
 
 
@@ -825,6 +1075,7 @@ class AnexosPeloPainel(Base):
 
     def dados(self, **mudancas):
         base = {
+            "submissao": str(self.cientifica.pk),
             "titulo": "Regulamento",
             "descricao": "As regras da submissão.",
             "link": "https://exemplo.invalid/regulamento.pdf",
@@ -903,7 +1154,7 @@ class AnexosPeloPainel(Base):
 
     def test_excluir_apaga_o_arquivo_do_disco(self):
         self.entrar("admin")
-        anexo = Anexo(titulo="Modelo")
+        anexo = Anexo(submissao=self.cientifica, titulo="Modelo")
         anexo.arquivo.save("modelo.docx", SimpleUploadedFile("modelo.docx", b"conteudo"))
         caminho = anexo.arquivo.path
 
@@ -922,7 +1173,7 @@ class AnexosPeloPainel(Base):
         self.assertEqual(Anexo.objects.count(), 0)
 
     def test_coordenacao_nao_exclui_por_post_direto(self):
-        anexo = Anexo.objects.create(titulo="Regulamento", link="https://exemplo.invalid/r.pdf")
+        anexo = Anexo.objects.create(submissao=self.cientifica, titulo="Regulamento", link="https://exemplo.invalid/r.pdf")
         self.entrar("coord_ads")
         r = self.client.post(reverse("painel:anexo_excluir", args=[anexo.pk]))
         self.assertEqual(r.status_code, 404)
@@ -934,14 +1185,55 @@ class AnexosPeloPainel(Base):
         self.assertIn(reverse("painel:entrar"), r["Location"])
 
     def test_get_nao_exclui(self):
-        anexo = Anexo.objects.create(titulo="Regulamento", link="https://exemplo.invalid/r.pdf")
+        anexo = Anexo.objects.create(submissao=self.cientifica, titulo="Regulamento", link="https://exemplo.invalid/r.pdf")
         self.entrar("admin")
         r = self.client.get(reverse("painel:anexo_excluir", args=[anexo.pk]))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Anexo.objects.count(), 1)
 
+    def test_documento_precisa_de_mostra(self):
+        self.entrar("admin")
+        r = self.client.post(reverse("painel:anexo_novo"), self.dados(submissao=""))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Anexo.objects.count(), 0)
+
+    def test_o_mesmo_titulo_em_outra_mostra_ganha_outro_endereco(self):
+        # cada mostra tem o seu "Regulamento"; /trabalhos/regulamento/ é o da
+        # primeira, que é o endereço já divulgado
+        self.entrar("admin")
+        self.client.post(reverse("painel:anexo_novo"), self.dados())
+        r = self.client.post(
+            reverse("painel:anexo_novo"), self.dados(submissao=str(self.empreendedora.pk))
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(
+            sorted(Anexo.objects.values_list("slug", flat=True)),
+            ["regulamento", "regulamento-mostra-empreendedora-e-tecnologica"],
+        )
+
+    def test_adicionar_a_partir_da_mostra_ja_vem_com_ela_escolhida(self):
+        self.entrar("admin")
+        r = self.client.get(
+            reverse("painel:anexo_novo") + f"?mostra={self.empreendedora.slug}"
+        )
+        self.assertEqual(r.context["form"].initial["submissao"], self.empreendedora)
+
+    def test_a_lista_separa_por_mostra(self):
+        Anexo.objects.create(
+            submissao=self.empreendedora, titulo="Edital empreendedor",
+            link="https://exemplo.invalid/e.pdf",
+        )
+        self.entrar("admin")
+        html = self.client.get(self.url).content.decode()
+        self.assertGreater(
+            html.index("Edital empreendedor"),
+            html.index('id="mostra-empreendedora-e-tecnologica"'),
+        )
+
     def test_publicar_pelo_painel_muda_a_pagina_de_submissao(self):
-        self.assertContains(self.client.get(reverse("trabalhos")), "ainda não foram publicados")
+        self.assertNotContains(
+            self.client.get(reverse("trabalhos")), "https://exemplo.invalid/regulamento.pdf"
+        )
 
         self.entrar("admin")
         self.client.post(reverse("painel:anexo_novo"), self.dados())
@@ -1054,6 +1346,7 @@ class DocumentoNoSite(Base):
     def setUp(self):
         Anexo.objects.all().delete()
         self.anexo = Anexo.objects.create(
+            submissao=self.cientifica,
             titulo="Regulamento",
             texto="## Das regras\n\nO trabalho do Campus deve ser enviado\nem PDF.\n\n- até 10 páginas\n- em PDF",
         )
@@ -1069,6 +1362,18 @@ class DocumentoNoSite(Base):
         self.assertIn("<li>até 10 páginas</li>", html)
         # linhas seguidas são um parágrafo só, e Campus sai em itálico
         self.assertIn("<p>O trabalho do <i>Campus</i> deve ser enviado em PDF.</p>", html)
+
+    def test_negrito_com_dois_asteriscos(self):
+        self.anexo.texto = "Apresentação na **modalidade banner**."
+        self.anexo.save()
+        html = self.client.get(self.anexo.url_pagina).content.decode()
+        self.assertIn("<b>modalidade banner</b>", html)
+
+    def test_a_volta_leva_a_mostra_do_documento(self):
+        r = self.client.get(self.anexo.url_pagina)
+        self.assertContains(r, f'href="{reverse("trabalhos")}#mostra-cientifica"')
+        self.assertContains(r, f'href="{reverse("trabalhos")}#mostra-cientifica-envio"')
+        self.assertContains(r, "Mostra Científica")
 
     def test_html_digitado_no_painel_nao_vira_marcacao(self):
         self.anexo.texto = "<script>alert(1)</script>"
@@ -1125,6 +1430,44 @@ class DocumentosSemeados(TestCase):
         self.assertNotContains(self.client.get(reverse("home")), "Ver o regulamento")
 
 
+class MostrasSemeadas(TestCase):
+    """O que as migrações 0012 a 0014 deixam no banco."""
+
+    def test_sao_duas_na_ordem_certa(self):
+        self.assertEqual(
+            list(Submissao.objects.values_list("nome", flat=True)),
+            ["Mostra Científica", "Mostra Empreendedora e Tecnológica"],
+        )
+
+    def test_os_documentos_que_existiam_sao_da_cientifica(self):
+        cientifica = Submissao.objects.get(slug="mostra-cientifica")
+        self.assertEqual(Anexo.objects.exclude(submissao=cientifica).count(), 0)
+        self.assertEqual(cientifica.anexos.count(), 3)
+
+    def test_a_cientifica_leva_as_quatro_datas_do_edital(self):
+        cientifica = Submissao.objects.get(slug="mostra-cientifica")
+        self.assertEqual(
+            [(e.titulo, e.inicio, e.fim) for e in cientifica.etapas.all()],
+            [
+                ("Submissão", date(2026, 9, 24), date(2026, 10, 12)),
+                ("Avaliação", date(2026, 9, 24), date(2026, 10, 15)),
+                ("Correções", date(2026, 10, 16), date(2026, 10, 20)),
+                ("Resultado final", date(2026, 10, 22), None),
+            ],
+        )
+
+    def test_a_cientifica_leva_o_texto_da_chamada(self):
+        cientifica = Submissao.objects.get(slug="mostra-cientifica")
+        self.assertIn("**modalidade banner**", cientifica.resumo)
+
+    def test_a_empreendedora_nasce_fechada_e_vazia(self):
+        e = Submissao.objects.get(slug="mostra-empreendedora-e-tecnologica")
+        self.assertFalse(e.aberta)
+        self.assertFalse(e.links.exists())
+        self.assertFalse(e.etapas.exists())
+        self.assertFalse(e.anexos.exists())
+
+
 class Saude(Base):
     def test_responde_ok(self):
         r = self.client.get(reverse("saude"))
@@ -1143,7 +1486,7 @@ class Acesso(Base):
             reverse("painel:lista"),
             reverse("painel:novo"),
             reverse("painel:inscricao", args=[self.ads.slug]),
-            reverse("painel:submissao"),
+            reverse("painel:submissao", args=["mostra-cientifica"]),
             reverse("painel:cartoes"),
             reverse("painel:cartao_novo"),
             reverse("painel:editar", args=[self.ev_ads.pk]),

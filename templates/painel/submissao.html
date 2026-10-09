@@ -1,50 +1,123 @@
 {% extends "painel/base.html" %}
 
-{% block titulo %}Submissão de trabalhos{% endblock %}
+{% block titulo %}{{ submissao.nome }}{% endblock %}
 
 {% block conteudo %}
   <p class="voltar"><a href="{% url 'painel:lista' %}">← Voltar para o cronograma</a></p>
 
-  <h1>Submissão de trabalhos</h1>
+  <h1>{{ submissao.nome }}</h1>
   <p class="painel__quem">
-    É uma só para a semana inteira: o mesmo link vale para todos os cursos e
-    áreas. Ele aparece na primeira seção da página inicial.
+    A submissão de trabalhos desta mostra. Aparece no cartão dela na página
+    inicial e na
+    <a href="{% url 'trabalhos' %}#{{ submissao.slug }}" target="_blank" rel="noopener">página
+    de submissão</a>. Os documentos ficam em
+    <a href="{% url 'painel:anexos' %}#{{ submissao.slug }}">Documentos da submissão</a>.
   </p>
 
   <form method="post" class="formulario" novalidate>
     {% csrf_token %}
 
-    <div class="campo campo--caixa{% if form.aberta.errors %} campo--erro{% endif %}">
-      <label for="{{ form.aberta.id_for_label }}">
-        {{ form.aberta }}
-        {{ form.aberta.label }}
-      </label>
-      <p class="campo__ajuda">{{ form.aberta.help_text }}</p>
-    </div>
+    {% if form.non_field_errors %}
+      <p class="aviso aviso--error">{{ form.non_field_errors|join:" " }}</p>
+    {% endif %}
 
-    <div class="campo{% if form.link.errors %} campo--erro{% endif %}">
-      <label for="{{ form.link.id_for_label }}">
-        {{ form.link.label }} <span class="campo__opcional">(opcional)</span>
-      </label>
-      {{ form.link }}
-      {% if form.link.errors %}
-        {% for erro in form.link.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
-      {% else %}
-        <p class="campo__ajuda">{{ form.link.help_text }}</p>
-      {% endif %}
-    </div>
+    {% for campo in form.visible_fields %}
+      <div class="campo{% if campo.errors %} campo--erro{% endif %}{% if campo.name == 'aberta' %} campo--caixa{% endif %}">
+        {% if campo.name == "aberta" %}
+          <label for="{{ campo.id_for_label }}">{{ campo }} {{ campo.label }}</label>
+        {% else %}
+          <label for="{{ campo.id_for_label }}">
+            {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
+          </label>
+          {{ campo }}
+        {% endif %}
+        {% if campo.help_text and not campo.errors %}
+          <p class="campo__ajuda">{{ campo.help_text }}</p>
+        {% endif %}
+        {% for erro in campo.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
+      </div>
+    {% endfor %}
 
-    <div class="campo{% if form.prazo.errors %} campo--erro{% endif %}">
-      <label for="{{ form.prazo.id_for_label }}">
-        {{ form.prazo.label }} <span class="campo__opcional">(opcional)</span>
-      </label>
-      {{ form.prazo }}
-      {% if form.prazo.errors %}
-        {% for erro in form.prazo.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
-      {% else %}
-        <p class="campo__ajuda">{{ form.prazo.help_text }}</p>
+    {% comment %}
+      Os formulários de envio. Cada linha vira um botão no site, com o texto
+      escrito aqui. Vêm duas linhas vazias de sobra: dá para cadastrar dois
+      formulários de uma vez (estudantes e professores, por exemplo) sem
+      depender de JavaScript. Linha vazia é ignorada.
+    {% endcomment %}
+    <fieldset class="quando">
+      <legend>Formulários de envio</legend>
+      {{ links.management_form }}
+      {% if links.non_form_errors %}
+        <p class="aviso aviso--error">{{ links.non_form_errors|join:" " }}</p>
       {% endif %}
-    </div>
+
+      <div class="quando__linhas">
+        {% for linha in links %}
+          <div class="quando__linha">
+            {{ linha.id }}
+            <div class="campos-link">
+              {% for campo in linha.visible_fields %}
+                {% if campo.name != "DELETE" %}
+                  <div class="campo{% if campo.errors %} campo--erro{% endif %}">
+                    <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                    {{ campo }}
+                    {% for erro in campo.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% if linha.instance.pk %}
+              <label class="quando__remover">{{ linha.DELETE }} Remover este link</label>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <p class="campo__ajuda">
+        Sem nenhum link, o site não mostra botão de envio, mesmo com a
+        submissão marcada como aberta. Para mais de dois, salve e volte: vêm
+        novas linhas vazias.
+      </p>
+    </fieldset>
+
+    {% comment %}
+      O cronograma da submissão. No site sai em ordem de data, e a última
+      etapa (em geral, o resultado) ganha destaque.
+    {% endcomment %}
+    <fieldset class="quando">
+      <legend>Cronograma da submissão</legend>
+      {{ etapas.management_form }}
+      {% if etapas.non_form_errors %}
+        <p class="aviso aviso--error">{{ etapas.non_form_errors|join:" " }}</p>
+      {% endif %}
+
+      <div class="quando__linhas">
+        {% for linha in etapas %}
+          <div class="quando__linha">
+            {{ linha.id }}
+            <div class="campos-etapa">
+              {% for campo in linha.visible_fields %}
+                {% if campo.name != "DELETE" %}
+                  <div class="campo{% if campo.errors %} campo--erro{% endif %}">
+                    <label for="{{ campo.id_for_label }}">
+                      {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
+                    </label>
+                    {{ campo }}
+                    {% for erro in campo.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% if linha.instance.pk %}
+              <label class="quando__remover">{{ linha.DELETE }} Remover esta etapa</label>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <p class="campo__ajuda">
+        Linha vazia é ignorada. Sem nenhuma etapa, a página avisa que as datas
+        ainda vão ser divulgadas.
+      </p>
+    </fieldset>
 
     <p class="campo-fixo">
       <span>Como está agora no site: <strong>{{ submissao.situacao }}</strong></span>

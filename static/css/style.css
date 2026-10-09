@@ -618,7 +618,8 @@ a { color: inherit; }
 /* A submissão é a única ação que vale para o evento inteiro. Ganha faixa
    inteira, e não um cartão no meio do papel: é o que faz a seção ter
    território próprio. O fio rosa no topo é a costura com o herói — sem
-   ele, as duas faixas escuras viram uma mancha só. */
+   ele, as duas faixas escuras viram uma mancha só. Dentro dela, um cartão
+   claro por mostra. */
 .chamada {
   background: var(--verde-950);
   color: var(--sobre-verde);
@@ -627,12 +628,7 @@ a { color: inherit; }
   line-height: 1.7;
 }
 
-.chamada__grade {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 0.75fr);
-  gap: clamp(var(--s-lg), 5vw, var(--s-3xl));
-  align-items: center;
-}
+.chamada__texto { max-width: 46rem; }
 
 .chamada__rotulo {
   display: flex;
@@ -659,18 +655,55 @@ a { color: inherit; }
   .chamada .lead { text-align: left; hyphens: manual; }
 }
 
-/* O cartão de envio. Claro sobre o escuro: é o único objeto da faixa, e por
-   isso é onde o olho para. O lugar grande no meio nunca fica vazio — quando
-   não há prazo ele diz o estado, que é a informação que existe. */
-.envio {
+/* As mostras lado a lado: são duas, de peso igual, e nenhuma é a principal.
+   Abaixo de ~46rem cada uma ganha a largura toda. */
+.mostras {
   display: grid;
-  justify-items: start;
-  gap: var(--s-2xs);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: clamp(var(--s-md), 3vw, var(--s-lg));
+  margin-top: clamp(var(--s-lg), 4vw, var(--s-xl));
+}
+
+/* O cartão de envio de uma mostra. Claro sobre o escuro: é onde o olho
+   para. O texto de cada mostra tem tamanho diferente, então o pé do cartão
+   (prazo e botão) desce até o fim — os dois botões ficam na mesma altura.
+   O lugar grande do pé nunca fica vazio: quando não há prazo ele diz o
+   estado, que é a informação que existe. */
+.envio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-sm);
   padding: clamp(var(--s-md), 2.5vw, var(--s-lg));
   background: #fff;
   color: var(--tinta);
   border-radius: var(--r-lg);
   box-shadow: 0 24px 50px -20px oklch(12% 0.04 149 / 0.55);
+}
+
+.envio__nome {
+  font-size: var(--t-h3);
+  color: var(--verde-900);
+  text-wrap: balance;
+}
+
+.envio__resumo {
+  font-size: var(--t-sm);
+  line-height: 1.6;
+  color: var(--tinta-2);
+}
+.envio__resumo p + p,
+.envio__resumo ul + p,
+.envio__resumo p + ul { margin-top: var(--s-2xs); }
+.envio__resumo ul { padding-left: var(--s-md); list-style: disc; }
+.envio__resumo b { color: var(--tinta); }
+
+.envio__pe {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-2xs);
+  margin-top: auto;
+  padding-top: var(--s-sm);
+  border-top: 1px solid var(--linha);
 }
 
 .envio__rotulo {
@@ -1271,12 +1304,10 @@ a { color: inherit; }
   .rodape__grade { grid-template-columns: 1fr; }
 }
 
-/* a faixa da submissão deita antes das outras grades: o cartão de envio é
-   largo e espremê-lo contra o texto quebra o título em palavras soltas */
-@media (max-width: 56rem) {
-  .chamada__grade { grid-template-columns: 1fr; }
+/* com um cartão por linha, o botão ocupa a largura toda */
+@media (max-width: 46rem) {
   .chamada h2 { max-width: none; }
-  .envio { justify-items: stretch; }
+  .envio__pe { justify-items: stretch; }
   .envio .botao { justify-content: center; }
 }
 
@@ -1610,7 +1641,7 @@ a { color: inherit; }
   text-transform: uppercase;
 }
 
-.doc__corpo h3 {
+.doc__corpo h4 {
   font-size: var(--t-base);
   font-weight: 800;
   line-height: 1.25;
@@ -1636,8 +1667,7 @@ a { color: inherit; }
   border-block: 1px solid var(--linha);
   padding-block: clamp(2.5rem, 5vw, 3.5rem);
 }
-.etapas .cabeca-secao h2 { font-size: var(--t-h3); }
-.etapas .lead { font-size: var(--t-base); color: var(--tinta-2); }
+.etapas__vazio { max-width: var(--prosa); color: var(--tinta-2); }
 
 .etapas__lista {
   display: grid;
@@ -1674,7 +1704,7 @@ a { color: inherit; }
   color: var(--verde-600);
   font-variant-numeric: tabular-nums;
 }
-.etapa h3 {
+.etapa h4 {
   font-size: var(--t-xs);
   font-family: var(--fonte-display);
   font-weight: 700;
@@ -1723,7 +1753,7 @@ a { color: inherit; }
   box-shadow: 0 30px 60px -32px oklch(22% 0.03 146 / 0.55);
   text-align: left;
 }
-.envio-final h2 {
+.envio-final h3 {
   font-size: clamp(1.75rem, 1.3rem + 2vw, 2.375rem);
   max-width: 18ch;
 }
@@ -1732,7 +1762,12 @@ a { color: inherit; }
   line-height: 1.6;
   color: var(--tinta-2);
 }
-.envio-final .botao--grande { margin-top: var(--s-sm); }
+.envio-final__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-xs);
+  margin-top: var(--s-sm);
+}
 /* fechado, o fio de cima não promete ação que ainda não existe */
 .envio-final:not(.envio-final--aberto) { border-top-color: var(--linha-forte); }
 
@@ -1774,7 +1809,7 @@ a { color: inherit; }
    botão — é a mesma ideia do "a confirmar" do resto do site */
 .doc--breve { background: var(--papel-2); border-style: dashed; }
 .doc--breve .doc__formato { background: var(--papel-3); color: var(--tinta-3); }
-.doc--breve h3 { color: var(--tinta-2); }
+.doc--breve h4 { color: var(--tinta-2); }
 
 @media (max-width: 40rem) {
   /* o botão desce para a linha de baixo e ocupa a largura toda: em tela
@@ -1782,4 +1817,72 @@ a { color: inherit; }
   .doc { grid-template-columns: auto minmax(0, 1fr); gap: var(--s-sm); }
   .doc__acao { grid-column: 1 / -1; }
   .doc__acao .botao { width: 100%; justify-content: center; }
+  .envio-final__botoes .botao { width: 100%; justify-content: center; }
 }
+
+/* ----------------------------------------------- as mostras em /trabalhos/
+
+   A página tem uma mostra abaixo da outra, cada uma com documentos, datas
+   e envio. O cabeçalho de cada mostra é o que diz "começou outra": um fio
+   rosa grosso em cima, o nome em corpo de título de seção. */
+
+/* os atalhos do herói: o nome de cada mostra e o prazo dela */
+.atalhos-mostras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-xs);
+  margin-top: var(--s-md);
+  list-style: none;
+}
+/* crescem até a largura do texto e, no celular, ocupam a linha toda: dois
+   cartões de larguras diferentes empilhados pareciam desalinhados */
+.atalhos-mostras li { flex: 1 1 16rem; max-width: 26rem; }
+.atalhos-mostras a {
+  height: 100%;
+  display: grid;
+  gap: 0.125rem;
+  padding: var(--s-xs) var(--s-md);
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: var(--r-md);
+  color: var(--tinta);
+  text-decoration: none;
+  transition: border-color 140ms var(--saida), box-shadow 140ms var(--saida);
+}
+.atalhos-mostras a:hover {
+  border-color: var(--linha-forte);
+  box-shadow: 0 12px 28px -18px oklch(22% 0.03 146 / 0.5);
+}
+.atalhos-mostras__nome {
+  font: 800 var(--t-base)/1.25 var(--fonte-display);
+  letter-spacing: -0.01em;
+}
+.atalhos-mostras__estado {
+  font-size: var(--t-sm);
+  color: var(--verde-700);
+}
+
+.mostra__cabeca {
+  padding-top: clamp(3rem, 6vw, 4.5rem);
+  border-top: 4px solid var(--rosa-700);
+}
+/* a primeira encosta no herói, que já separa: o fio seria costura dupla */
+.heroi + .mostra .mostra__cabeca { border-top: 0; padding-top: clamp(2rem, 4vw, 3rem); }
+.mostra__cabeca h2 { margin-top: var(--s-2xs); text-wrap: balance; }
+
+.mostra__resumo {
+  max-width: var(--prosa);
+  margin-top: var(--s-sm);
+  font-size: var(--t-lead);
+  line-height: 1.55;
+  color: var(--tinta-2);
+}
+.mostra__resumo p + p,
+.mostra__resumo ul + p,
+.mostra__resumo p + ul { margin-top: var(--s-sm); }
+.mostra__resumo ul { padding-left: var(--s-md); list-style: disc; }
+.mostra__resumo b { color: var(--tinta); }
+
+/* o cabeçalho já respira em cima; a seção de documentos não precisa dobrar */
+.mostra__cabeca + .secao { padding-top: clamp(2rem, 4vw, 3rem); }
+.mostra .cabeca-secao { margin-bottom: var(--s-lg); }

@@ -29,13 +29,14 @@ def texto_rico(texto, autoescape=True):
 
         ## Título           vira <h2>
         - item              vira item de lista
+        **texto**           vira negrito
         linha em branco     separa parágrafos
 
     Linhas seguidas viram um parágrafo só, e não um por linha: quem escreve
     num textarea quebra a linha onde a janela acaba, sem querer dizer nada
     com isso.
 
-    Tudo é escapado antes de qualquer coisa, e só estas três formas viram
+    Tudo é escapado antes de qualquer coisa, e só estas quatro formas viram
     marcação: um `<script>` digitado no painel aparece como texto na tela.
     """
     escapar = conditional_escape if autoescape else (lambda x: x)
@@ -62,6 +63,10 @@ def texto_rico(texto, autoescape=True):
             continue
 
         escapada = re.sub(r"\bCampus\b", "<i>Campus</i>", escapar(linha))
+        # O negrito chegou com o texto das mostras, que destaca o que não
+        # pode passar batido ("modalidade banner"). Vem depois do escape,
+        # como o resto: os asteriscos não carregam HTML nenhum.
+        escapada = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escapada)
         if linha.startswith("## "):
             fecha_o_paragrafo()
             fecha_a_lista()

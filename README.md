@@ -28,11 +28,11 @@ Aplicação Django + PostgreSQL, em container, sob o domínio
 | Endereço | Quem entra | Para quê |
 |---|---|---|
 | `/` | qualquer um | página da semana (a mesma de sempre) |
-| `/trabalhos/` | qualquer um | submissão de trabalhos: regulamento, modelos e o botão de envio |
+| `/trabalhos/` | qualquer um | submissão de trabalhos, uma seção por mostra: regulamento, modelos, datas e o botão de envio |
 | `/trabalhos/<documento>/` | qualquer um | um documento lido no próprio site — hoje, o regulamento |
 | `/cronograma/` | qualquer um | cronograma, dia por dia, vindo do banco |
 | `/painel/` | coordenações | cadastrar os eventos das próprias áreas e abrir/fechar a inscrição delas |
-| `/painel/submissao/` | só o administrador | link e prazo da submissão de trabalhos |
+| `/painel/submissao/<mostra>/` | só o administrador | texto, links, prazo e datas da submissão de uma mostra |
 | `/painel/anexos/` | só o administrador | os documentos da página de submissão |
 | `/painel/cartoes/` | só o administrador | os sete cartões da seção Eventos |
 | `/admin/` | só o administrador | contas, cursos/áreas e todos os eventos |
@@ -77,7 +77,7 @@ Informática, Biologia e Medicina Veterinária.
 python manage.py test
 ```
 
-São 56 testes, a maioria sobre permissão: o que cada tipo de conta consegue e
+São 168 testes, a maioria sobre permissão: o que cada tipo de conta consegue e
 não consegue fazer, inclusive por POST direto na URL. Também cobrem o estado
 das inscrições na página inicial e o filtro do cronograma.
 
@@ -136,26 +136,45 @@ atividade, aparece independentemente do interruptor da área.
 
 ### 5. Abrir a submissão de trabalhos
 
-A submissão é **uma só para a semana inteira** — não é por curso nem por
-evento —, então quem mexe nela é você, e não as coordenações. Em `/painel/`,
-no bloco "Submissão de trabalhos", clique em *Alterar*, marque **submissão
-aberta** e cole o link do formulário. O prazo é opcional: preenchido, a página
-mostra "Envios até …"; em branco, não fala em prazo.
+A submissão é **por mostra**: a semana tem a **Mostra Científica** e a
+**Mostra Empreendedora e Tecnológica**, cada uma com regulamento, prazo, datas
+e formulário próprios. Não é por curso nem por evento, então quem mexe é
+você, e não as coordenações. As duas mostras já vêm criadas pela migração.
 
-É a primeira seção da página inicial, e o botão dela **não vai direto ao
-formulário**: leva a `/trabalhos/`, onde estão o regulamento e o modelo, e o
-envio fica no fim daquela página. Enquanto a submissão estiver fechada, as
-duas mostram "em breve" no lugar do botão — nada some, para quem chega saber
-que vai existir.
+Em `/painel/`, no bloco "Submissão de trabalhos", clique em *Alterar* na
+mostra. Na tela dela:
 
-Uma coordenação que digite `/painel/submissao/` na barra de endereços recebe
-404: a checagem é no servidor, não em esconder o bloco da tela.
+- **Texto de apresentação** — aparece no cartão da mostra na página inicial e
+  no alto da seção dela em `/trabalhos/`. `**assim**` vira negrito; linha em
+  branco separa parágrafos.
+- **Submissão aberta** e **prazo** — o prazo é opcional: preenchido, a página
+  mostra "Envios até …"; em branco, não fala em prazo.
+- **Formulários de envio** — cada linha vira um botão, com o texto que você
+  escrever. Uma mostra pode ter mais de um: a Empreendedora tem um formulário
+  para estudantes e outro para professores ("Sou estudante", "Sou
+  professor"). Sem nenhum link não aparece botão, mesmo com a caixa marcada.
+- **Cronograma da submissão** — as etapas (submissão, avaliação, resultado…),
+  que o site mostra em ordem de data, com a última em destaque.
+
+A seção da submissão é a primeira da página inicial, com um cartão por
+mostra, e o botão de cada cartão **não vai direto ao formulário**: leva à
+seção daquela mostra em `/trabalhos/`, onde estão o regulamento e o modelo, e
+o envio fica no fim. Enquanto uma mostra estiver fechada, ela mostra "em
+breve" no lugar do botão — nada some, para quem chega saber que vai existir.
+
+Uma coordenação que digite `/painel/submissao/mostra-cientifica/` na barra de
+endereços recebe 404: a checagem é no servidor, não em esconder o bloco da
+tela.
 
 ### 6. Publicar o regulamento e o modelo
 
 Os documentos que o estudante lê antes de enviar ficam em `/painel/anexos/`
-(atalho **Documentos da submissão**, só você o vê). O site já sobe anunciando
-os três que a organização combinou:
+(atalho **Documentos da submissão**, só você o vê), separados por mostra —
+todo documento pertence a uma. Use o *+ Adicionar a esta mostra* de cada uma.
+Um segundo "Regulamento" ganha o endereço
+`/trabalhos/regulamento-<mostra>/`, porque `/trabalhos/regulamento/` já é o da
+Científica. O site já sobe anunciando os três documentos que a organização
+combinou para a Mostra Científica:
 
 | Documento | Estado |
 |---|---|
@@ -280,13 +299,14 @@ config/
   urls.py
 
 eventos/
-  models.py              Area, Evento, Submissao, Cartao, Anexo e areas_do_usuario()
+  models.py              Area, Evento, Horario, Submissao (uma por mostra), LinkDeEnvio,
+                         Etapa, Cartao, Anexo e areas_do_usuario()
   views.py               site público e painel (@so_administrador fecha o que é só seu)
   forms.py               formulários do painel
   admin.py               Django Admin, incluindo o campo de áreas no usuário
   templatetags/snct.py   |campus e |texto_rico, os dois únicos que geram HTML
   management/commands/   criar_admin: a conta inicial, a partir do .env
-  tests.py               134 testes, sobretudo de permissão
+  tests.py               168 testes, sobretudo de permissão
   migrations/
     0001_initial.py
     0002_areas_iniciais.py         cria os cursos/áreas da semana
@@ -297,6 +317,11 @@ eventos/
     0007_documentos_da_submissao.py   regulamento, modelos e afins
     0008_inscricao_por_evento.py      link de inscrição de uma atividade só
     0009_documentos_previstos.py      anuncia os três documentos, sem arquivo
+    0010_horarios_do_evento.py        um evento pode ter vários dias e horários
+    0011_evento_sem_data_propria.py   tira data e hora de Evento
+    0012_submissao_por_mostra.py      campos e tabelas da submissão por mostra
+    0013_as_duas_mostras.py           a submissão vira a Científica; cria a Empreendedora
+    0014_mostra_obrigatoria.py        todo documento passa a ter mostra
 
 templates/
   base.html              cabeçalho, rodapé e meta tags do site público
@@ -326,7 +351,7 @@ formulário chamam essa função, então mudar a regra é mudar uma função.
   mesma queryset que valida o POST
 - **Editar/excluir** — `get_object_or_404(..., area__in=areas_do_usuario(user))`
 - **Inscrição** — `get_object_or_404(areas_do_usuario(user), slug=slug)`
-- **Submissão, documentos dela e cartões da home** — valem para o evento
+- **Submissão das mostras, documentos delas e cartões da home** — valem para o evento
   inteiro, então a porta é o decorador `@so_administrador`: quem não é
   superusuário recebe 404, no GET e no POST
 - **Administrador** — `is_superuser` recebe todas as áreas ativas
@@ -342,10 +367,10 @@ A ordem das seções é:
 
 1. **herói** — data, tema e contagem regressiva;
 2. **Submissão de trabalhos** (`#trabalhos`) — a primeira seção: faixa escura
-   inteira, separada do herói por um fio vermelho, com um cartão claro à
-   direita. O cartão mostra o prazo em corpo grande quando há data, e o
-   estado (“Em breve”/“Aberta”) quando não há. Link e prazo vêm do banco, e o
-   botão leva a `/trabalhos/`;
+   inteira, separada do herói por um fio rosa, com um cartão claro por
+   mostra. Cada cartão traz o texto da mostra e, no pé, o prazo em corpo
+   grande quando há data, ou o estado (“Em breve”/“Aberta”) quando não há.
+   Tudo vem do banco, e o botão leva à seção da mostra em `/trabalhos/`;
 3. **Programação geral** (`#programacao`) — os quatro dias, em três cartões;
 4. **Eventos** (`#eventos`) — abre com o bloco **Como se inscrever**
    (`#inscrever`, três passos, sempre visível) e depois os cartões, que vêm
@@ -369,10 +394,14 @@ inscrição separada leva o próprio link no cadastro do evento.
 
 ### A página de submissão
 
-`/trabalhos/` (`templates/trabalhos.html`) tem três tempos, nesta ordem: o
-**estado** no cabeçalho (o prazo, quando há), os **documentos** para ler antes
-e o **envio** no fim, em faixa escura. Tudo vem do banco: os documentos de
-`/painel/anexos/`, o link e o prazo de `/painel/submissao/`.
+`/trabalhos/` (`templates/trabalhos.html`) abre com um atalho para cada
+mostra, com o prazo dela, e depois traz as mostras uma abaixo da outra — é o
+endereço que já foi divulgado, então tudo continua nele. Cada mostra
+(`#mostra-cientifica`, `#mostra-empreendedora-e-tecnologica`) tem os três
+tempos, nesta ordem: os **documentos** para ler antes, as **datas** e o
+**envio** no fim (`#<mostra>-envio`). Tudo vem do banco: os documentos de
+`/painel/anexos/` e o resto de `/painel/submissao/<mostra>/`. Uma mostra sem
+nada publicado mostra um aviso só, em vez de três caixas vazias.
 
 O **envio fica num cartão claro**, e não numa faixa escura: em faixa ele
 encostava no rodapé — também escuro — e os dois viravam a mesma mancha,

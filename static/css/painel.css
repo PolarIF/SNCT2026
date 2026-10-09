@@ -411,6 +411,22 @@
   grid-template-columns: 1.4fr 1fr 1fr;
 }
 
+/* Um formulário de envio: o texto do botão e o endereço, lado a lado. */
+.campos-link {
+  display: grid;
+  gap: var(--s-sm);
+  grid-template-columns: 1fr 2fr;
+}
+
+/* Uma etapa do cronograma da submissão: nome e datas numa linha, a
+   descrição embaixo, com a largura toda. */
+.campos-etapa {
+  display: grid;
+  gap: var(--s-sm);
+  grid-template-columns: 1.4fr 1fr 1fr;
+}
+.campos-etapa .campo:last-child { grid-column: 1 / -1; }
+
 .campo { display: grid; gap: var(--s-3xs); align-content: start; }
 .campo label {
   font-family: var(--fonte-display);
@@ -556,6 +572,9 @@
 
   .campos-quando { grid-template-columns: 1fr 1fr; }
   .campos-quando .campo:first-child { grid-column: 1 / -1; }
+  .campos-link { grid-template-columns: 1fr; }
+  .campos-etapa { grid-template-columns: 1fr 1fr; }
+  .campos-etapa .campo:first-child { grid-column: 1 / -1; }
 
   .campos-dupla { grid-template-columns: 1fr; }
   .inscricao { grid-template-columns: 1fr auto; }
@@ -612,3 +631,17 @@
 /* a coluna de horários do cartão: vários empilhados quando o evento se
    repete no mesmo dia */
 .cartao__hora { display: grid; gap: var(--s-3xs); }
+
+/* ------------------------------------------- documentos, por mostra
+
+   Cada mostra tem o seu regulamento: dois "Regulamento" numa lista só não
+   diriam qual é qual. */
+.grupo-mostra + .grupo-mostra { margin-top: var(--s-xl); }
+.grupo-mostra__cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-xs);
+  margin-bottom: var(--s-sm);
+}

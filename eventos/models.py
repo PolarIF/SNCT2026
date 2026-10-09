@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.text import slugify
 
 
@@ -274,25 +275,38 @@ def agenda_por_dia(horarios):
 
 
 class Submissao(models.Model):
-    """Submissão de trabalhos: uma só para a semana inteira.
+    """A submissão de trabalhos de uma mostra.
 
-    Não é por evento nem por área — é um link único, o mesmo para todo mundo.
-    Por isso existe uma linha só, criada pela migração e carregada por
-    `Submissao.atual()`. Mora no banco, e não no HTML, pela mesma razão das
-    inscrições: o endereço e o prazo mudam depois de o site já estar no ar.
+    Era uma só para a semana inteira. Virou uma por mostra quando a semana
+    passou a ter duas — a Científica e a Empreendedora e Tecnológica —, cada
+    uma com regulamento, prazo, datas e formulário próprios. As duas nascem
+    da migração; não é algo que se cria toda semana, e por isso o painel só
+    edita.
+
+    Mora no banco, e não no HTML, pela mesma razão das inscrições: o
+    endereço e o prazo mudam depois de o site já estar no ar.
     """
 
+    nome = models.CharField("mostra", max_length=80, unique=True)
+    slug = models.SlugField(
+        "endereço curto",
+        max_length=80,
+        unique=True,
+        blank=True,
+        help_text="Preenchido automaticamente a partir do nome. É a âncora "
+        "da mostra em /trabalhos/.",
+    )
+    resumo = models.TextField(
+        "texto de apresentação",
+        blank=True,
+        help_text="Aparece na página inicial e no alto da mostra em "
+        "/trabalhos/. **texto** vira negrito; linha em branco separa "
+        "parágrafos.",
+    )
     aberta = models.BooleanField(
         "submissão aberta",
         default=False,
         help_text="Desmarcada, a página mostra “A submissão abre em breve”.",
-    )
-    link = models.URLField(
-        "link da submissão",
-        max_length=300,
-        blank=True,
-        help_text="Endereço do formulário de envio. Sem ele não aparece botão, "
-        "mesmo com a submissão marcada como aberta.",
     )
     prazo = models.DateField(
         "prazo de envio",
@@ -300,41 +314,120 @@ class Submissao(models.Model):
         blank=True,
         help_text="Opcional. Sem data preenchida, a página não fala em prazo.",
     )
+    ordem = models.PositiveSmallIntegerField(
+        "ordem",
+        default=0,
+        help_text="Menor primeiro, na página inicial e em /trabalhos/.",
+    )
 
     class Meta:
         verbose_name = "submissão de trabalhos"
-        verbose_name_plural = "submissão de trabalhos"
+        verbose_name_plural = "submissões de trabalhos"
+        ordering = ["ordem", "nome"]
 
     def __str__(self):
-        return "Submissão de trabalhos"
+        return self.nome
 
     def save(self, *args, **kwargs):
-        # Uma linha só: qualquer save escreve sempre na mesma.
-        self.pk = 1
+        if not self.slug:
+            self.slug = slugify(self.nome)[:80]
         super().save(*args, **kwargs)
 
-    @classmethod
-    def atual(cls):
-        """A configuração da submissão, mesmo que a linha ainda não exista.
-
-        Devolver um objeto vazio em vez de None deixa o template simples: ele
-        pergunta `submissao.mostra_botao` e pronto, sem checar nulo antes.
-        """
-        return cls.objects.first() or cls()
+    @cached_property
+    def links_de_envio(self):
+        """Os botões de envio, em ordem. Lista, e não queryset: o template
+        pergunta por eles mais de uma vez, e cada pergunta seria uma consulta."""
+        return list(self.links.all())
 
     @property
     def mostra_botao(self):
         """Só há botão quando a submissão está aberta e há para onde ir."""
-        return bool(self.aberta and self.link)
+        return bool(self.aberta and self.links_de_envio)
+
+    @property
+    def tem_documento(self):
+        """Já há documento para ler ou baixar? Apenas anunciado não conta."""
+        return self.anexos.com_conteudo().exists()
 
     @property
     def situacao(self):
-        """O que a página inicial mostra hoje na seção de trabalhos."""
+        """O que a página inicial mostra hoje no cartão desta mostra."""
         if self.mostra_botao:
             return "botão “Enviar meu trabalho”"
         if self.aberta:
             return "marcada como aberta, mas sem link — nenhum botão aparece"
         return "“A submissão abre em breve”"
+
+
+class LinkDeEnvio(models.Model):
+    """Um formulário de envio de uma mostra.
+
+    É uma lista porque nem toda mostra tem um formulário só: a Empreendedora
+    e Tecnológica tem um para estudantes e outro para professores. Cada link
+    vira um botão, com o texto que a organização escrever.
+    """
+
+    submissao = models.ForeignKey(
+        Submissao,
+        verbose_name="mostra",
+        on_delete=models.CASCADE,
+        related_name="links",
+    )
+    rotulo = models.CharField(
+        "texto do botão",
+        max_length=60,
+        help_text="Ex.: “Enviar meu trabalho”, ou “Sou estudante” quando há "
+        "um formulário para cada público.",
+    )
+    url = models.URLField("link do formulário", max_length=300)
+    ordem = models.PositiveSmallIntegerField("ordem", default=0)
+
+    class Meta:
+        verbose_name = "link de envio"
+        verbose_name_plural = "links de envio"
+        ordering = ["ordem", "pk"]
+
+    def __str__(self):
+        return self.rotulo
+
+
+class Etapa(models.Model):
+    """Uma data do cronograma de uma mostra: submissão, avaliação, resultado.
+
+    Eram quatro datas fixas no HTML de /trabalhos/. Viraram dado quando a
+    segunda mostra chegou com calendário próprio.
+    """
+
+    submissao = models.ForeignKey(
+        Submissao,
+        verbose_name="mostra",
+        on_delete=models.CASCADE,
+        related_name="etapas",
+    )
+    titulo = models.CharField("etapa", max_length=60)
+    inicio = models.DateField("dia")
+    fim = models.DateField(
+        "até",
+        null=True,
+        blank=True,
+        help_text="Só quando a etapa dura mais de um dia.",
+    )
+    descricao = models.CharField("descrição", max_length=160, blank=True)
+
+    class Meta:
+        verbose_name = "etapa do cronograma"
+        verbose_name_plural = "etapas do cronograma"
+        # Pela data, e não por um campo de ordem: é um cronograma. Etapas que
+        # começam juntas (o envio e a avaliação correm em paralelo) ficam na
+        # ordem em que terminam.
+        ordering = ["inicio", "fim", "pk"]
+
+    def __str__(self):
+        return self.titulo
+
+    def clean(self):
+        if self.fim and self.inicio and self.fim < self.inicio:
+            raise ValidationError({"fim": "O fim tem que ser depois do início."})
 
 
 class Cartao(models.Model):
@@ -472,6 +565,12 @@ class Anexo(models.Model):
     dentro dela sumiria.
     """
 
+    submissao = models.ForeignKey(
+        Submissao,
+        verbose_name="mostra",
+        on_delete=models.PROTECT,
+        related_name="anexos",
+    )
     titulo = models.CharField("título", max_length=120)
     slug = models.SlugField(
         "endereço curto",
@@ -525,15 +624,34 @@ class Anexo(models.Model):
     class Meta:
         verbose_name = "documento da submissão"
         verbose_name_plural = "documentos da submissão"
-        ordering = ["ordem", "titulo"]
+        ordering = ["submissao__ordem", "ordem", "titulo"]
 
     def __str__(self):
         return self.titulo
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.titulo)[:120]
+            self.slug = self._slug_livre()
         super().save(*args, **kwargs)
+
+    def _slug_livre(self):
+        """O slug do título, ou com o nome da mostra quando ele já existe.
+
+        Cada mostra tem o seu “Regulamento”, e o endereço é um só para o site
+        inteiro (/trabalhos/<slug>/). O primeiro fica com /regulamento/ — que
+        é o endereço já divulgado —, e o seguinte vira
+        /regulamento-mostra-empreendedora-e-tecnologica/.
+        """
+        base = slugify(self.titulo)[:120]
+        outros = Anexo.objects.exclude(pk=self.pk)
+        if not outros.filter(slug=base).exists():
+            return base
+        candidato = f"{base}-{self.submissao.slug}"[:120]
+        n = 2
+        while outros.filter(slug=candidato).exists():
+            candidato = f"{base}-{self.submissao.slug}"[: 120 - len(str(n)) - 1] + f"-{n}"
+            n += 1
+        return candidato
 
     def clean(self):
         # Um ou outro, nunca os dois: os dois preenchidos deixariam o botão

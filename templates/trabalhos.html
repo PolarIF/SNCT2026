@@ -2,9 +2,9 @@
 {% load snct %}
 
 {% block titulo %}Submissão de trabalhos — 23ª SNCT · IFRO Campus Ariquemes{% endblock %}
-{% block descricao %}Como enviar um trabalho para a 23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes: regulamento, modelos de trabalho e o formulário de envio.{% endblock %}
+{% block descricao %}Como enviar um trabalho para a 23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes: as mostras, o regulamento e os modelos de cada uma, as datas e o formulário de envio.{% endblock %}
 {% block og_titulo %}Submissão de trabalhos — 23ª SNCT{% endblock %}
-{% block og_descricao %}Regulamento, modelos e o formulário de envio dos trabalhos da 23ª SNCT do IFRO Campus Ariquemes.{% endblock %}
+{% block og_descricao %}Regulamento, modelos, datas e o formulário de envio de cada mostra da 23ª SNCT do IFRO Campus Ariquemes.{% endblock %}
 
 {% block conteudo %}
 
@@ -13,201 +13,239 @@
       <p class="rotulo" style="--i:0">23ª SNCT · Campus Ariquemes</p>
       <h1 style="--i:1">Submissão de trabalhos</h1>
       <p class="lead" style="--i:2">
-        Estudantes de qualquer curso podem inscrever trabalhos na semana. É um
-        envio só, para o evento inteiro: não é por curso nem por área. Leia os
-        documentos abaixo antes de enviar.
-      </p>
-
-      <p class="estado" style="--i:3">
-        {% if submissao.prazo %}
-          <span class="estado__rotulo">Prazo de envio</span>
-          <b>{{ submissao.prazo|date:"j" }} de {{ submissao.prazo|date:"F"|lower }}</b>
+        {% if mostras|length > 1 %}
+          Estudantes de qualquer curso podem inscrever trabalhos na semana, em
+          {{ mostras|length }} mostras. Cada uma tem o seu regulamento, as suas
+          datas e o seu formulário: escolha a sua e leia os documentos dela
+          antes de enviar.
         {% else %}
-          <span class="estado__rotulo">Envio dos trabalhos</span>
-          <b>{% if submissao.mostra_botao %}Aberto{% else %}Em breve{% endif %}</b>
+          Estudantes de qualquer curso podem inscrever trabalhos na semana.
+          Leia os documentos abaixo antes de enviar.
         {% endif %}
       </p>
-    </div>
-  </section>
-
-  <section class="secao">
-    <div class="shell">
-
-      <div class="cabeca-secao">
-        <p class="rotulo">Antes de enviar</p>
-        <h2>Documentos</h2>
-      </div>
 
       {% comment %}
-        Os documentos vêm do banco (/painel/anexos/). Um documento ainda sem
-        arquivo continua na lista, como "em breve": a pessoa precisa saber que
-        ele vai existir, e um botão que não abre nada seria pior que nenhum.
+        Os atalhos fazem o papel da antiga tarja de prazo: é a data de cada
+        mostra que a pessoa veio conferir, e daqui ela já pula para a sua.
       {% endcomment %}
-      {% if anexos %}
-        <ul class="docs">
-          {% for anexo in anexos %}
-            <li class="doc revela{% if not anexo.disponivel and not anexo.tem_pagina %} doc--breve{% endif %}"
-                style="--i:{{ forloop.counter0 }}">
-              <p class="doc__formato" aria-hidden="true">{{ anexo.formato }}</p>
-
-              <div class="doc__corpo">
-                <h3>{{ anexo.titulo }}</h3>
-                {% if anexo.descricao %}
-                  <p class="doc__desc">{{ anexo.descricao|campus }}</p>
-                {% endif %}
-                <p class="doc__meta">
-                  {% if not anexo.disponivel %}
-                    {% if anexo.tem_pagina %}
-                      Leitura no site · arquivo em breve
-                    {% else %}
-                      Ainda não publicado
-                    {% endif %}
-                  {% elif anexo.externo %}
-                    Documento publicado fora deste site
+      {% if mostras|length > 1 %}
+        <ul class="atalhos-mostras" style="--i:3">
+          {% for mostra in mostras %}
+            <li>
+              <a href="#{{ mostra.slug }}">
+                <span class="atalhos-mostras__nome">{{ mostra.nome }}</span>
+                <span class="atalhos-mostras__estado">
+                  {% if mostra.prazo %}
+                    Envios até {{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}
+                  {% elif mostra.mostra_botao %}
+                    Envio aberto
                   {% else %}
-                    {{ anexo.formato }}{% if anexo.tamanho %} · {{ anexo.tamanho }}{% endif %}
+                    Em breve
                   {% endif %}
-                </p>
-              </div>
-
-              <p class="doc__acao">
-                {% if anexo.tem_pagina %}
-                  <a class="botao botao--linha" href="{{ anexo.url_pagina }}">
-                    Ler no site <span class="seta" aria-hidden="true">→</span>
-                  </a>
-                {% endif %}
-                {% if anexo.disponivel %}
-                  <a class="botao botao--linha" href="{{ anexo.url }}"
-                     {% if anexo.externo %}target="_blank" rel="noopener"{% else %}download{% endif %}>
-                    {% if anexo.externo %}Abrir{% else %}Baixar{% endif %}
-                    <span class="seta" aria-hidden="true">→</span>
-                  </a>
-                {% elif not anexo.tem_pagina %}
-                  <span class="em-breve">Em breve</span>
-                {% endif %}
-              </p>
+                </span>
+              </a>
             </li>
           {% endfor %}
         </ul>
       {% else %}
-        <div class="vazio">
-          <p class="vazio__titulo">Os documentos ainda não foram publicados</p>
-          <p>O regulamento e os modelos de trabalho ficam nesta página assim que
-            a comissão organizadora divulgar. Vale conferir de novo mais perto
-            de outubro.</p>
-        </div>
-      {% endif %}
-
-    </div>
-  </section>
-
-  {% comment %}
-    As quatro datas estão fixas aqui de propósito: valem para esta edição
-    inteira, saem do edital e não são campo de painel. Se a comissão remarcar,
-    é aqui que se edita — e o prazo em /painel/ → "Submissão de trabalhos"
-    precisa mudar junto, senão o herói desta página passa a dizer outra coisa.
-
-    A avaliação começa no mesmo dia da submissão porque corre junto com o
-    envio: quem manda cedo é avaliado cedo.
-  {% endcomment %}
-  <section class="secao etapas" id="cronograma-submissao">
-    <div class="shell">
-
-      <div class="cabeca-secao">
-        <p class="rotulo">Datas</p>
-        <h2>Cronograma da submissão</h2>
-        <p class="lead">
-          Da abertura do envio à divulgação do resultado, antes da semana
-          começar.
-        </p>
-      </div>
-
-      <ol class="etapas__lista">
-        <li class="etapa revela" style="--i:0">
-          <p class="etapa__n" aria-hidden="true">1</p>
-          <h3>Submissão</h3>
-          <p class="etapa__data">
-            <time datetime="2026-09-24">24/09</time> a
-            <time datetime="2026-10-12">12/10</time>
-          </p>
-          <p class="etapa__desc">Envio dos trabalhos pelo formulário.</p>
-        </li>
-
-        <li class="etapa revela" style="--i:1">
-          <p class="etapa__n" aria-hidden="true">2</p>
-          <h3>Avaliação</h3>
-          <p class="etapa__data">
-            <time datetime="2026-09-24">24/09</time> a
-            <time datetime="2026-10-15">15/10</time>
-          </p>
-          <p class="etapa__desc">Corre junto com o envio: quem manda cedo é
-            avaliado cedo.</p>
-        </li>
-
-        <li class="etapa revela" style="--i:2">
-          <p class="etapa__n" aria-hidden="true">3</p>
-          <h3>Correções</h3>
-          <p class="etapa__data">
-            <time datetime="2026-10-16">16/10</time> a
-            <time datetime="2026-10-20">20/10</time>
-          </p>
-          <p class="etapa__desc">Prazo para ajustar o que a avaliação apontar.</p>
-        </li>
-
-        <li class="etapa etapa--fecho revela" style="--i:3">
-          <p class="etapa__n" aria-hidden="true">4</p>
-          <h3>Resultado final</h3>
-          <p class="etapa__data">
-            <time datetime="2026-10-22">22/10</time>
-          </p>
-          <p class="etapa__desc">Divulgação dos trabalhos aprovados, na véspera
-            da semana.</p>
-        </li>
-      </ol>
-
-    </div>
-  </section>
-
-  {% comment %}
-    O envio é um cartão, e não uma faixa escura: em faixa ele encostava no
-    rodapé — também escuro — e os dois viravam a mesma mancha, justamente no
-    ponto em que a pessoa precisa ver um botão.
-  {% endcomment %}
-  <section class="secao secao--fecho" id="enviar">
-    <div class="shell">
-      <div class="envio-final{% if submissao.mostra_botao %} envio-final--aberto{% endif %}">
-        <p class="rotulo">Envio</p>
-
-        <h2>
-          {% if submissao.mostra_botao %}
-            Leu tudo? Então é só enviar.
-          {% else %}
-            O formulário de envio abre em breve
-          {% endif %}
-        </h2>
-
-        <p class="envio-final__nota">
-          {% if submissao.mostra_botao %}
-            O envio é feito num formulário fora deste site.
-            {% if submissao.prazo %}
-              Ele fecha em {{ submissao.prazo|date:"j" }} de {{ submissao.prazo|date:"F"|lower }}.
+        {% for mostra in mostras %}
+          <p class="estado" style="--i:3">
+            {% if mostra.prazo %}
+              <span class="estado__rotulo">Prazo de envio</span>
+              <b>{{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}</b>
+            {% else %}
+              <span class="estado__rotulo">Envio dos trabalhos</span>
+              <b>{% if mostra.mostra_botao %}Aberto{% else %}Em breve{% endif %}</b>
             {% endif %}
-          {% else %}
-            O endereço do formulário é divulgado aqui mesmo, nesta página,
-            assim que a comissão organizadora abrir a submissão.
-          {% endif %}
-        </p>
-
-        {% if submissao.mostra_botao %}
-          <a class="botao botao--acao botao--grande" href="{{ submissao.link }}"
-             target="_blank" rel="noopener">
-            Enviar meu trabalho <span class="seta" aria-hidden="true">→</span>
-          </a>
-        {% else %}
-          <span class="em-breve">Envio em breve</span>
-        {% endif %}
-      </div>
+          </p>
+        {% endfor %}
+      {% endif %}
     </div>
   </section>
+
+  {% for mostra in mostras %}
+    {% comment %}
+      Cada mostra repete os três tempos que a página sempre teve: o que ler
+      antes, as datas e o envio no fim. O envio fica por último de propósito:
+      chegar nele depois de passar pelos documentos é a ordem certa de ler.
+    {% endcomment %}
+    <section class="mostra" id="{{ mostra.slug }}" aria-labelledby="{{ mostra.slug }}-titulo">
+
+      <header class="mostra__cabeca">
+        <div class="shell">
+          <p class="rotulo">Mostra {{ forloop.counter }} de {{ mostras|length }}</p>
+          <h2 id="{{ mostra.slug }}-titulo">{{ mostra.nome }}</h2>
+          {% if mostra.resumo %}
+            <div class="mostra__resumo">{{ mostra.resumo|texto_rico }}</div>
+          {% endif %}
+        </div>
+      </header>
+
+      {% if not mostra.documentos and not mostra.etapas.all and not mostra.mostra_botao %}
+        {# Nada publicado ainda: um aviso só, em vez de três caixas vazias seguidas. #}
+        <div class="secao secao--fecho">
+          <div class="shell">
+            <div class="vazio">
+              <p class="vazio__titulo">Esta mostra ainda vai abrir</p>
+              <p>O regulamento, as datas e o formulário de envio aparecem aqui
+                assim que a comissão organizadora divulgar.</p>
+            </div>
+          </div>
+        </div>
+      {% else %}
+
+        <div class="secao">
+          <div class="shell">
+            <div class="cabeca-secao">
+              <p class="rotulo">Antes de enviar</p>
+              <h3>Documentos</h3>
+            </div>
+
+            {% comment %}
+              Os documentos vêm do banco (/painel/anexos/). Um documento ainda
+              sem arquivo continua na lista, como "em breve": a pessoa precisa
+              saber que ele vai existir, e um botão que não abre nada seria
+              pior que nenhum.
+            {% endcomment %}
+            {% if mostra.documentos %}
+              <ul class="docs">
+                {% for anexo in mostra.documentos %}
+                  <li class="doc revela{% if not anexo.disponivel and not anexo.tem_pagina %} doc--breve{% endif %}"
+                      style="--i:{{ forloop.counter0 }}">
+                    <p class="doc__formato" aria-hidden="true">{{ anexo.formato }}</p>
+
+                    <div class="doc__corpo">
+                      <h4>{{ anexo.titulo }}</h4>
+                      {% if anexo.descricao %}
+                        <p class="doc__desc">{{ anexo.descricao|campus }}</p>
+                      {% endif %}
+                      <p class="doc__meta">
+                        {% if not anexo.disponivel %}
+                          {% if anexo.tem_pagina %}
+                            Leitura no site · arquivo em breve
+                          {% else %}
+                            Ainda não publicado
+                          {% endif %}
+                        {% elif anexo.externo %}
+                          Documento publicado fora deste site
+                        {% else %}
+                          {{ anexo.formato }}{% if anexo.tamanho %} · {{ anexo.tamanho }}{% endif %}
+                        {% endif %}
+                      </p>
+                    </div>
+
+                    <p class="doc__acao">
+                      {% if anexo.tem_pagina %}
+                        <a class="botao botao--linha" href="{{ anexo.url_pagina }}">
+                          Ler no site <span class="seta" aria-hidden="true">→</span>
+                        </a>
+                      {% endif %}
+                      {% if anexo.disponivel %}
+                        <a class="botao botao--linha" href="{{ anexo.url }}"
+                           {% if anexo.externo %}target="_blank" rel="noopener"{% else %}download{% endif %}>
+                          {% if anexo.externo %}Abrir{% else %}Baixar{% endif %}
+                          <span class="seta" aria-hidden="true">→</span>
+                        </a>
+                      {% elif not anexo.tem_pagina %}
+                        <span class="em-breve">Em breve</span>
+                      {% endif %}
+                    </p>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="vazio">
+                <p class="vazio__titulo">Os documentos ainda não foram publicados</p>
+                <p>O regulamento e os modelos desta mostra ficam aqui assim que a
+                  comissão organizadora divulgar.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% comment %}
+          As datas vêm do painel, uma etapa por linha, em ordem de data. A
+          última é a que fecha o calendário — em geral o resultado —, e é a
+          única em destaque: é o que a pessoa veio procurar.
+        {% endcomment %}
+        <div class="secao etapas" id="{{ mostra.slug }}-datas">
+          <div class="shell">
+            <div class="cabeca-secao">
+              <p class="rotulo">Datas</p>
+              <h3>Cronograma da submissão</h3>
+            </div>
+
+            {% if mostra.etapas.all %}
+              <ol class="etapas__lista">
+                {% for etapa in mostra.etapas.all %}
+                  <li class="etapa revela{% if forloop.last %} etapa--fecho{% endif %}" style="--i:{{ forloop.counter0 }}">
+                    <p class="etapa__n" aria-hidden="true">{{ forloop.counter }}</p>
+                    <h4>{{ etapa.titulo }}</h4>
+                    <p class="etapa__data">
+                      <time datetime="{{ etapa.inicio|date:'Y-m-d' }}">{{ etapa.inicio|date:"d/m" }}</time>{% if etapa.fim %} a
+                      <time datetime="{{ etapa.fim|date:'Y-m-d' }}">{{ etapa.fim|date:"d/m" }}</time>{% endif %}
+                    </p>
+                    {% if etapa.descricao %}
+                      <p class="etapa__desc">{{ etapa.descricao|campus }}</p>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ol>
+            {% else %}
+              <p class="etapas__vazio">As datas desta mostra são divulgadas aqui
+                assim que a comissão organizadora definir.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% comment %}
+          O envio é um cartão, e não uma faixa escura: em faixa ele encostava
+          no rodapé — também escuro — e os dois viravam a mesma mancha,
+          justamente no ponto em que a pessoa precisa ver um botão.
+        {% endcomment %}
+        <div class="secao secao--fecho" id="{{ mostra.slug }}-envio">
+          <div class="shell">
+            <div class="envio-final{% if mostra.mostra_botao %} envio-final--aberto{% endif %}">
+              <p class="rotulo">Envio · {{ mostra.nome }}</p>
+
+              <h3>
+                {% if mostra.mostra_botao %}
+                  Leu tudo? Então é só enviar.
+                {% else %}
+                  O formulário de envio abre em breve
+                {% endif %}
+              </h3>
+
+              <p class="envio-final__nota">
+                {% if mostra.mostra_botao %}
+                  O envio é feito num formulário fora deste site.
+                  {% if mostra.prazo %}
+                    Ele fecha em {{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}.
+                  {% endif %}
+                {% else %}
+                  O endereço do formulário é divulgado aqui mesmo, nesta página,
+                  assim que a comissão organizadora abrir a submissão.
+                {% endif %}
+              </p>
+
+              {% if mostra.mostra_botao %}
+                <p class="envio-final__botoes">
+                  {% for link in mostra.links_de_envio %}
+                    <a class="botao botao--acao botao--grande"
+                       href="{{ link.url }}" target="_blank" rel="noopener">
+                      {{ link.rotulo }} <span class="seta" aria-hidden="true">→</span>
+                    </a>
+                  {% endfor %}
+                </p>
+              {% else %}
+                <span class="em-breve">Envio em breve</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      {% endif %}
+    </section>
+  {% endfor %}
 
 {% endblock %}
