@@ -81,6 +81,11 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") or [
     if host not in {"localhost", "127.0.0.1"} and "*" not in host
 ]
 
+# Atrás do Traefik na VPS nova. O Cf-Ray e o IP real do cliente só são aceitos
+# quando o peer L4 (REMOTE_ADDR) está nesta faixa — senão qualquer cliente
+# direto poderia forjar o id que vai para o log e a auditoria.
+CIDRS_PROXY_CONFIAVEL = env_list("CIDRS_PROXY_CONFIAVEL") or ["127.0.0.1/32"]
+
 # ----------------------------------------------------------------- aplicações
 
 INSTALLED_APPS = [
@@ -109,11 +114,11 @@ MIDDLEWARE = [
 ]
 
 if METRICS_ATIVO:
-    # O par tem de envolver todo o resto: o "Before" marca o início da
-    # requisição e o "After" fecha a conta. Fora dessa ordem a latência medida
-    # exclui o trabalho dos middlewares do meio.
-    MIDDLEWARE.insert(0, "django_prometheus.middleware.PrometheusBeforeMiddleware")
-    MIDDLEWARE.append("django_prometheus.middleware.PrometheusAfterMiddleware")
+    # O contrato de métricas vem do nosso middleware (nomes http_requests_total
+    # etc.), não do django-prometheus — que emitiria nomes próprios e contaria
+    # cada requisição em dobro. Os backends de banco do django-prometheus ficam
+    # (abaixo), pois medem o que o nosso não mede e não colidem.
+    MIDDLEWARE.insert(0, "config.observabilidade.ObservabilidadeMiddleware")
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -248,3 +253,22 @@ if not DEBUG:
 
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+# ---------------------------------------------------------------------- logging
+
+# Tudo sai em JSON de uma linha no stdout — o container entrega ao coletor
+# (Loki/promtail), que indexa por campo. A linha de acesso (logger snct.acesso,
+# emitida pelo ObservabilidadeMiddleware) carrega o Cf-Ray, casando com as
+# métricas e com a auditoria.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"json": {"()": "config.observabilidade.FormatadorJSON"}},
+    "handlers": {"stdout": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "root": {"handlers": ["stdout"], "level": "INFO"},
+    "loggers": {
+        "snct.acesso": {"handlers": ["stdout"], "level": "INFO", "propagate": False},
+        # A linha de acesso do gunicorn sairia em texto, duplicando a nossa.
+        "gunicorn.access": {"handlers": [], "level": "CRITICAL", "propagate": False},
+    },
+}

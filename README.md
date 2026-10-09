@@ -81,6 +81,18 @@ São 168 testes, a maioria sobre permissão: o que cada tipo de conta consegue e
 não consegue fazer, inclusive por POST direto na URL. Também cobrem o estado
 das inscrições na página inicial e o filtro do cronograma.
 
+Os testes de observabilidade (`eventos/test_observabilidade.py`) raspam o
+`/metrics`, que só existe quando as métricas estão ligadas. Como essa fiação é
+feita no carregamento do `settings`/`urls` (o `@override_settings` não a
+reconstrói), rode-os como em produção, com a variável ligada:
+
+```bash
+METRICS_ATIVO=1 python manage.py test
+```
+
+Sem ela, só esses testes falham (os demais passam) — não é código quebrado, é a
+métrica desligada. A CI roda com `METRICS_ATIVO=1`.
+
 ---
 
 ## Primeiros passos como administrador

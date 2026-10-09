@@ -5,11 +5,60 @@ from django.contrib.auth.forms import UserChangeForm as UserChangeFormPadrao
 from django.contrib.auth.forms import UserCreationForm as UserCreationFormPadrao
 from django.contrib.auth.models import Group, User
 
+from config.observabilidade import contexto_atual
+
 from .models import Anexo, Area, Cartao, Etapa, Evento, Horario, LinkDeEnvio, Submissao
 
 
+class _AuditoriaContextoMixin:
+    """Anexa IP e Cf-Ray ao change_message do LogEntry do admin.
+
+    Auditoria reduzida: o spec proíbe tabela nova no SNCT, então o IP e o
+    Cf-Ray da requisição vão para o change_message — o texto livre que já
+    aparece no histórico de cada objeto no admin.
+
+    Dependência: o contexto (IP/Cf-Ray) é preenchido pelo ObservabilidadeMiddleware,
+    que só é instalado com METRICS_ATIVO=1. Em produção está ligado. Se for
+    desligado, a auditoria degrada para "ip=? cf_ray=?" (não falha) — o registro
+    da ação continua, só sem o enriquecimento.
+
+    Como o Django guarda o change_message (confirmado empiricamente): em uma
+    adição/alteração a `message` chega como LISTA de dicts estruturados (ex.:
+    `[{"added": {}}]`) e o Django a serializa em JSON na coluna; em alguns
+    caminhos chega como string, gravada crua; na exclusão o Django não guarda
+    change_message (só o object_repr). Para o IP e o Cf-Ray aparecerem no texto
+    consultável nos três casos sem quebrar a renderização bonita do histórico:
+    na lista acrescentamos um dict `{"auditoria": ...}` (continua JSON válido e
+    o template ignora a chave desconhecida); na string, o sufixo entre
+    colchetes; na exclusão, gravamos o contexto no change_message já salvo.
+    """
+
+    def _contexto_auditoria(self):
+        ctx = contexto_atual()
+        return f"ip={ctx.get('client_ip', '?')} cf_ray={ctx.get('cf_ray', '?')}"
+
+    def _com_auditoria(self, message):
+        sufixo = self._contexto_auditoria()
+        if isinstance(message, list):
+            return message + [{"auditoria": sufixo}]
+        return f"{message} [{sufixo}]"
+
+    def log_addition(self, request, obj, message):
+        return super().log_addition(request, obj, self._com_auditoria(message))
+
+    def log_change(self, request, obj, message):
+        return super().log_change(request, obj, self._com_auditoria(message))
+
+    def log_deletion(self, request, obj, object_repr):
+        # Na exclusão o change_message nasce vazio; grava o contexto nele.
+        entrada = super().log_deletion(request, obj, object_repr)
+        entrada.change_message = f"[{self._contexto_auditoria()}]"
+        entrada.save(update_fields=["change_message"])
+        return entrada
+
+
 @admin.register(Area)
-class AreaAdmin(admin.ModelAdmin):
+class AreaAdmin(_AuditoriaContextoMixin, admin.ModelAdmin):
     # "inscrições abertas" é editável direto na lista: dá para abrir e fechar
     # as sete áreas numa tela só, que é o que a organização faz na semana.
     list_display = [
@@ -65,7 +114,7 @@ class EtapaInline(admin.TabularInline):
 
 
 @admin.register(Submissao)
-class SubmissaoAdmin(admin.ModelAdmin):
+class SubmissaoAdmin(_AuditoriaContextoMixin, admin.ModelAdmin):
     """As mostras e a submissão de cada uma.
 
     O caminho normal é o painel (/painel/ → Submissão de trabalhos). Isto
@@ -88,7 +137,7 @@ class SubmissaoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Cartao)
-class CartaoAdmin(admin.ModelAdmin):
+class CartaoAdmin(_AuditoriaContextoMixin, admin.ModelAdmin):
     """Os cartões da página inicial.
 
     O caminho normal é /painel/cartoes/, que é mais simples de usar. Isto
@@ -134,7 +183,7 @@ class HorarioInline(admin.TabularInline):
 
 
 @admin.register(Evento)
-class EventoAdmin(admin.ModelAdmin):
+class EventoAdmin(_AuditoriaContextoMixin, admin.ModelAdmin):
     # A data saiu de Evento e foi para Horario, então nem list_display nem
     # list_filter nem date_hierarchy podem mais apontar para ela. O que fica é
     # uma coluna que lê os horários já carregados pelo prefetch.
@@ -210,7 +259,7 @@ class UserCreationFormComAreas(AreasNoUsuario, UserCreationFormPadrao):
     areas = campo_areas()
 
 
-class UserAdmin(UserAdminPadrao):
+class UserAdmin(_AuditoriaContextoMixin, UserAdminPadrao):
     form = UserChangeFormComAreas
     add_form = UserCreationFormComAreas
     list_display = ["username", "get_full_name", "areas_resumo", "is_active", "is_superuser"]
@@ -259,7 +308,7 @@ admin.site.unregister(Group)
 
 
 @admin.register(Anexo)
-class AnexoAdmin(admin.ModelAdmin):
+class AnexoAdmin(_AuditoriaContextoMixin, admin.ModelAdmin):
     """Os documentos da página de submissão.
 
     O caminho normal é o painel (/painel/anexos/); isto aqui é a rede de
