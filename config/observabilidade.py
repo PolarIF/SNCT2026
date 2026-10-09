@@ -85,12 +85,23 @@ def _resolver_cf_ray(request) -> str:
     return str(uuid.uuid4())
 
 
+def _ip_valido(valor: str) -> bool:
+    try:
+        ipaddress.ip_address(valor)
+    except ValueError:
+        return False
+    return True
+
+
 def _resolver_ip(request) -> str:
     remote = request.META.get("REMOTE_ADDR", "")
     if _peer_confiavel(remote):
         # A Cloudflare põe o IP real do cliente aqui; o Traefik repassa.
-        cf = request.META.get("HTTP_CF_CONNECTING_IP")
-        if cf:
+        # Valida como IP antes de confiar: o valor vai para o log e a
+        # auditoria, e um cabeçalho malformado (ex.: com quebra de linha) seria
+        # injeção de log. Se não parecer IP, cai no peer real.
+        cf = request.META.get("HTTP_CF_CONNECTING_IP", "")
+        if cf and _ip_valido(cf):
             return cf
     return remote or "desconhecido"
 

@@ -62,3 +62,20 @@ class CorrelacaoCfRay(TestCase):
         import uuid
         r = self.client.get("/cronograma/", REMOTE_ADDR="127.0.0.1")
         uuid.UUID(r.wsgi_request.cf_ray)  # não levanta
+
+
+@override_settings(METRICS_ATIVO=True, CIDRS_PROXY_CONFIAVEL=["127.0.0.1/32"])
+class ClientIpValidado(TestCase):
+    def test_cf_connecting_ip_malformado_nao_vai_para_o_client_ip(self):
+        # De peer confiável, mas o valor não é um IP (tentativa de injeção):
+        r = self.client.get("/cronograma/",
+                            HTTP_CF_CONNECTING_IP="1.2.3.4\ninjecao",
+                            REMOTE_ADDR="127.0.0.1")
+        self.assertNotIn("injecao", r.wsgi_request.client_ip)
+        self.assertEqual(r.wsgi_request.client_ip, "127.0.0.1")  # cai no peer
+
+    def test_cf_connecting_ip_valido_vai_para_o_client_ip(self):
+        r = self.client.get("/cronograma/",
+                            HTTP_CF_CONNECTING_IP="203.0.113.55",
+                            REMOTE_ADDR="127.0.0.1")
+        self.assertEqual(r.wsgi_request.client_ip, "203.0.113.55")
