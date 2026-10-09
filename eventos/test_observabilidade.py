@@ -127,3 +127,17 @@ class LinhaDeAcesso(TestCase):
         linha = _json_do(cap.records[-1])
         self.assertEqual(linha["extra"]["route"], "/saude/")
         self.assertEqual(linha["extra"]["status"], 503)
+
+
+@override_settings(METRICS_ATIVO=True, CIDRS_PROXY_CONFIAVEL=["127.0.0.1/32"])
+class VerboCruNoLogNormalizadoNaMetrica(TestCase):
+    def test_verbo_inventado_cru_no_log_mas_normalizado_na_metrica(self):
+        import json
+        from config.observabilidade import FormatadorJSON
+        with self.assertLogs("snct.acesso", level="INFO") as cap:
+            self.client.generic("VERBOX", "/cronograma/", REMOTE_ADDR="127.0.0.1")
+        linha = json.loads(FormatadorJSON().format(cap.records[-1]))
+        self.assertEqual(linha["extra"]["method"], "VERBOX")  # log: cru
+        corpo = self.client.get("/metrics").content.decode()
+        self.assertIn('method="<desconhecido>"', corpo)        # métrica: normalizado
+        self.assertNotIn('method="VERBOX"', corpo)

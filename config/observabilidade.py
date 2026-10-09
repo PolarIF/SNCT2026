@@ -157,11 +157,6 @@ def _rota_de(request) -> str:
     return rota if rota.startswith("/") else "/" + rota
 
 
-def _metodo_de(request) -> str:
-    """O verbo HTTP, com os inventados caindo no balde <desconhecido>."""
-    metodo = request.method or "GET"
-    return metodo if metodo in METODOS_CONHECIDOS else METODO_DESCONHECIDO
-
 
 class ObservabilidadeMiddleware:
     """Emite as duas métricas do contrato por requisição HTTP.
@@ -186,7 +181,12 @@ class ObservabilidadeMiddleware:
 
         caminho = request.path
         infra = caminho in CAMINHOS_NAO_MEDIDOS
-        metodo = _metodo_de(request)
+        # A MÉTRICA usa o verbo normalizado (custo de série); a LINHA DE ACESSO
+        # usa o verbo cru — campo de log não tem cardinalidade, e mascarar
+        # esconderia justamente o que se quer ver numa varredura. Igual aos
+        # outros dois projetos do contrato.
+        metodo_cru = request.method or "GET"
+        metodo = metodo_cru if metodo_cru in METODOS_CONHECIDOS else METODO_DESCONHECIDO
         # Para os caminhos de infra a rota é o próprio caminho (fixo); para os
         # demais, o template resolvido. Um único cálculo serve à métrica e à
         # linha de acesso, sem recapturar nada.
@@ -205,7 +205,7 @@ class ObservabilidadeMiddleware:
             _log_acesso.info("requisicao atendida", extra={"extra": {
                 "request_id": request.cf_ray,
                 "client_ip": request.client_ip,
-                "method": metodo,
+                "method": metodo_cru,
                 "route": rota,
                 "status": response.status_code,
                 "duration_ms": round(duracao * 1000, 2),
