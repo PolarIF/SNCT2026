@@ -81,6 +81,11 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") or [
     if host not in {"localhost", "127.0.0.1"} and "*" not in host
 ]
 
+# Atrás do Traefik na VPS nova. O Cf-Ray e o IP real do cliente só são aceitos
+# quando o peer L4 (REMOTE_ADDR) está nesta faixa — senão qualquer cliente
+# direto poderia forjar o id que vai para o log e a auditoria.
+CIDRS_PROXY_CONFIAVEL = env_list("CIDRS_PROXY_CONFIAVEL") or ["127.0.0.1/32"]
+
 # ----------------------------------------------------------------- aplicações
 
 INSTALLED_APPS = [

@@ -8,8 +8,13 @@ três. As métricas de BANCO do django-prometheus ficam (não colidem).
 """
 from __future__ import annotations
 
+import ipaddress
+import re
 import time
+import uuid
+from contextvars import ContextVar
 
+from django.conf import settings
 from prometheus_client import Counter, Histogram
 
 # Os mesmos onze buckets dos outros dois projetos. Buckets diferentes tornam
@@ -46,6 +51,49 @@ METODO_DESCONHECIDO = "<desconhecido>"
 # (/saude/, 30s) dominarem a série e inflarem o denominador de erro.
 CAMINHOS_NAO_MEDIDOS = frozenset({"/metrics", "/saude/"})
 
+# O Cf-Ray da Cloudflare: 16 hex + '-' + código de três maiúsculas do data
+# center (ex.: 8a1b2c3d4e5f6789-GRU). Validar o formato impede que um cliente
+# direto injete qualquer coisa (log forging) no id que vai para a auditoria.
+_CF_RAY = re.compile(r"^[0-9a-f]{16}-[A-Z]{3}\Z")
+
+# Contexto da requisição corrente, por task/thread. A linha de acesso (Task 3)
+# lê daqui o cf_ray e o client_ip sem precisar do objeto request.
+_CTX: ContextVar[dict] = ContextVar("obs_ctx", default={})
+
+
+def contexto_atual() -> dict:
+    """Contexto da requisição corrente (cf_ray, client_ip) para o log."""
+    return _CTX.get()
+
+
+def _peer_confiavel(remote_addr: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(remote_addr)
+    except ValueError:
+        return False
+    for cidr in settings.CIDRS_PROXY_CONFIAVEL:
+        if ip in ipaddress.ip_network(cidr, strict=False):
+            return True
+    return False
+
+
+def _resolver_cf_ray(request) -> str:
+    bruto = request.META.get("HTTP_CF_RAY", "")
+    remote = request.META.get("REMOTE_ADDR", "")
+    if bruto and _peer_confiavel(remote) and _CF_RAY.match(bruto):
+        return bruto
+    return str(uuid.uuid4())
+
+
+def _resolver_ip(request) -> str:
+    remote = request.META.get("REMOTE_ADDR", "")
+    if _peer_confiavel(remote):
+        # A Cloudflare põe o IP real do cliente aqui; o Traefik repassa.
+        cf = request.META.get("HTTP_CF_CONNECTING_IP")
+        if cf:
+            return cf
+    return remote or "desconhecido"
+
 
 class ObservabilidadeMiddleware:
     """Emite as duas métricas do contrato por requisição HTTP.
@@ -58,8 +106,14 @@ class ObservabilidadeMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        request.cf_ray = _resolver_cf_ray(request)
+        request.client_ip = _resolver_ip(request)
+        token = _CTX.set({"cf_ray": request.cf_ray, "client_ip": request.client_ip})
         inicio = time.perf_counter()
-        response = self.get_response(request)
+        try:
+            response = self.get_response(request)
+        finally:
+            _CTX.reset(token)
         duracao = time.perf_counter() - inicio
 
         caminho = request.path

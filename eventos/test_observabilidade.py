@@ -37,3 +37,28 @@ class ContratoDeMetricas(TestCase):
         corpo = self._raspar()
         self.assertIn('method="<desconhecido>"', corpo)
         self.assertNotIn("VERBOINVENTADO", corpo)
+
+
+@override_settings(METRICS_ATIVO=True, CIDRS_PROXY_CONFIAVEL=["127.0.0.1/32"])
+class CorrelacaoCfRay(TestCase):
+    def test_usa_cf_ray_de_proxy_confiavel(self):
+        r = self.client.get("/cronograma/", HTTP_CF_RAY="8a1b2c3d4e5f6789-GRU",
+                             REMOTE_ADDR="127.0.0.1")
+        self.assertEqual(r.wsgi_request.cf_ray, "8a1b2c3d4e5f6789-GRU")
+
+    def test_ignora_cf_ray_de_origem_nao_confiavel(self):
+        r = self.client.get("/cronograma/", HTTP_CF_RAY="8a1b2c3d4e5f6789-GRU",
+                             REMOTE_ADDR="203.0.113.9")
+        self.assertNotEqual(r.wsgi_request.cf_ray, "8a1b2c3d4e5f6789-GRU")
+        self.assertRegex(r.wsgi_request.cf_ray, r"^[0-9a-f-]{36}$")  # uuid
+
+    def test_recusa_cf_ray_mal_formado_de_proxy_confiavel(self):
+        r = self.client.get("/cronograma/", HTTP_CF_RAY='{"inj":1}',
+                             REMOTE_ADDR="127.0.0.1")
+        self.assertNotIn("inj", r.wsgi_request.cf_ray)
+        self.assertRegex(r.wsgi_request.cf_ray, r"^[0-9a-f-]{36}$")
+
+    def test_gera_uuid_quando_nao_ha_cf_ray(self):
+        import uuid
+        r = self.client.get("/cronograma/", REMOTE_ADDR="127.0.0.1")
+        uuid.UUID(r.wsgi_request.cf_ray)  # não levanta
