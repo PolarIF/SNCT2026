@@ -1,3 +1,4 @@
+import logging
 from functools import wraps
 
 from django.contrib import messages
@@ -94,11 +95,16 @@ def saude(request):
 
     É o que o healthcheck do container consulta, e o primeiro lugar onde a TI
     olha quando algo parece fora do ar. Responde texto puro de propósito.
+
+    No 503 NÃO devolve o texto da exceção: a mensagem do banco pode trazer
+    host/credencial, e esta rota é a primeira que a TI abre — o detalhe fica no
+    log (stderr/JSON), não na resposta HTTP.
     """
     try:
         connection.ensure_connection()
-    except Exception as erro:  # noqa: BLE001 — qualquer falha aqui é "fora do ar"
-        return HttpResponse(f"banco inacessível: {erro}\n", status=503, content_type="text/plain")
+    except Exception:  # noqa: BLE001 — qualquer falha aqui é "fora do ar"
+        logging.getLogger("snct.saude").exception("banco inacessível no /saude/")
+        return HttpResponse("banco inacessível\n", status=503, content_type="text/plain")
     return HttpResponse("ok\n", content_type="text/plain")
 
 

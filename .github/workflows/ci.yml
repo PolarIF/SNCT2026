@@ -31,6 +31,7 @@ jobs:
       SECRET_KEY: chave-descartavel-de-teste
       DEBUG: "0"
       HTTPS_ATIVO: "0"
+      METRICS_ATIVO: "1"
       ALLOWED_HOSTS: localhost,127.0.0.1,testserver
       DATABASE_URL: postgresql://snct:senha-de-teste@localhost:5432/snct
 
