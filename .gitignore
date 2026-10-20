@@ -27,3 +27,13 @@ midia/
 *.docx
 *.zip
 edital-para-colar-no-site.txt
+
+# credenciais / chaves privadas — nunca versionar (incidente 2026-10-20)
+vps-pessoal
+*_key
+*-key
+id_rsa
+id_ecdsa
+id_ed25519
+*.pem
+*.ppk
