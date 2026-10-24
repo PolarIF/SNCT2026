@@ -7,15 +7,28 @@ o botão na tela não conta — o que conta é o servidor recusar.
 import pathlib
 import shutil
 import tempfile
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.utils.dateformat import format as formata_data
 
 from .models import Anexo, Area, Cartao, Etapa, Evento, Horario, LinkDeEnvio, Submissao
+
+
+def daqui_a(dias):
+    """Uma data relativa a hoje. Prazo com data fixa no teste vira prazo
+    vencido assim que o calendário passa dele, e o teste quebra sozinho."""
+    return timezone.localdate() + timedelta(days=dias)
+
+
+def mes(data):
+    """"de outubro", como a página escreve o mês do prazo."""
+    return "de " + formata_data(data, "F").lower()
 
 
 class Base(TestCase):
@@ -399,11 +412,11 @@ class SubmissaoNaHome(Base):
         self.abrir()
         self.assertNotContains(self.client.get(reverse("home")), "Prazo de envio")
 
-        self.cientifica.prazo = date(2026, 10, 10)
+        self.cientifica.prazo = daqui_a(10)
         self.cientifica.save()
         r = self.client.get(reverse("home"))
         self.assertContains(r, "Prazo de envio")
-        self.assertContains(r, "de outubro")
+        self.assertContains(r, mes(self.cientifica.prazo))
 
     def test_as_duas_mostras_tem_cartao_proprio(self):
         r = self.client.get(reverse("home"))
@@ -452,6 +465,94 @@ class SubmissaoNaHome(Base):
         # acima da grade, e não recolhido num <details>
         self.assertLess(html.index('id="inscrever"'), html.index('class="grade-eventos"'))
         self.assertIn("Escolha o evento", html)
+
+
+class PrazoEncerrado(Base):
+    """Passou do prazo, a submissão fecha sozinha — marcada ou não."""
+
+    def test_no_ultimo_dia_ainda_da_para_enviar(self):
+        self.abrir(prazo=daqui_a(0))
+        self.assertFalse(self.cientifica.encerrada)
+        self.assertContains(self.client.get(reverse("home")), "Enviar meu trabalho")
+
+    def test_no_dia_seguinte_fecha_sozinha(self):
+        self.abrir(prazo=daqui_a(-1))
+        self.assertTrue(self.cientifica.encerrada)
+        self.assertFalse(self.cientifica.mostra_botao)
+
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "Prazo encerrado")
+        self.assertNotContains(r, "Enviar meu trabalho")
+
+        r = self.client.get(reverse("trabalhos"))
+        self.assertContains(r, "Prazo de envio encerrado")
+        self.assertContains(r, "Prazo encerrado em")
+        # o formulário não vaza depois do prazo
+        self.assertNotContains(r, "forms.exemplo.invalid")
+
+    def test_desmarcar_depois_do_prazo_nao_volta_a_dizer_em_breve(self):
+        # o caso relatado: a organização desmarcou a caixa depois do prazo, e
+        # a página voltava a prometer "Em breve" para uma submissão encerrada
+        self.cientifica.aberta = False
+        self.cientifica.prazo = daqui_a(-3)
+        self.cientifica.save()
+
+        html = self.client.get(reverse("home")).content.decode()
+        cartao = html[html.index("Mostra Científica</h3>"):html.index("Mostra Empreendedora e Tecnológica</h3>")]
+        self.assertIn("Prazo encerrado", cartao)
+        self.assertNotIn("Em breve", cartao)
+
+    def test_mostra_encerrada_sem_nada_publicado_nao_diz_que_vai_abrir(self):
+        self.cientifica.prazo = daqui_a(-1)
+        self.cientifica.save()
+        r = self.client.get(reverse("trabalhos"))
+        self.assertContains(r, "Esta mostra ainda vai abrir", count=1)  # só a Empreendedora
+        self.assertContains(r, "Prazo de envio encerrado")
+
+    def test_uma_encerrada_nao_fecha_a_outra(self):
+        self.abrir(self.cientifica, prazo=daqui_a(-1))
+        self.abrir(self.empreendedora, url="https://forms.exemplo.invalid/empreende", prazo=daqui_a(5))
+        r = self.client.get(reverse("trabalhos"))
+        self.assertContains(r, "https://forms.exemplo.invalid/empreende")
+        self.assertNotContains(r, "https://forms.exemplo.invalid/trabalhos")
+
+    def test_mudar_o_prazo_reabre(self):
+        self.abrir(prazo=daqui_a(-1))
+        self.cientifica.prazo = daqui_a(2)
+        self.cientifica.save()
+        self.assertContains(self.client.get(reverse("home")), "Enviar meu trabalho")
+
+    def test_o_painel_avisa_que_encerrou(self):
+        self.abrir(prazo=daqui_a(-1))
+        self.entrar("admin")
+        r = self.client.get(reverse("painel:lista"))
+        self.assertContains(r, "Encerrada")
+        self.assertContains(r, "Para reabrir, mude o prazo")
+
+
+class MostraSemDocumento(Base):
+    """Sem documento nenhum, a seção de documentos nem aparece."""
+
+    def test_mostra_sem_documento_nao_tem_a_secao(self):
+        Anexo.objects.all().delete()
+        self.abrir(self.empreendedora, url="https://forms.exemplo.invalid/empreende")
+
+        html = self.client.get(reverse("trabalhos")).content.decode()
+        secao = html[html.index('id="mostra-empreendedora-e-tecnologica"'):]
+        self.assertNotIn("Documentos</h3>", secao)
+        self.assertNotIn("ainda não foram publicados", secao)
+        # o resto da mostra continua lá
+        self.assertIn("https://forms.exemplo.invalid/empreende", secao)
+
+    def test_com_documento_a_secao_volta(self):
+        Anexo.objects.all().delete()
+        self.abrir(self.empreendedora, url="https://forms.exemplo.invalid/empreende")
+        Anexo.objects.create(
+            submissao=self.empreendedora, titulo="Edital", link="https://exemplo.invalid/e.pdf"
+        )
+        html = self.client.get(reverse("trabalhos")).content.decode()
+        secao = html[html.index('id="mostra-empreendedora-e-tecnologica"'):]
+        self.assertIn("Documentos</h3>", secao)
 
 
 class SubmissaoPeloPainel(Base):
@@ -665,7 +766,7 @@ class SubmissaoPeloPainel(Base):
             self.url,
             self.dados(
                 aberta="on",
-                prazo="2026-10-10",
+                prazo=daqui_a(10).isoformat(),
                 links=[("Enviar meu trabalho", "https://forms.exemplo.invalid/t")],
             ),
         )
@@ -674,7 +775,7 @@ class SubmissaoPeloPainel(Base):
         r = self.client.get(reverse("home"))
         self.assertContains(r, "Enviar meu trabalho")
         self.assertContains(r, "Prazo de envio")
-        self.assertContains(r, "de outubro")
+        self.assertContains(r, mes(daqui_a(10)))
         # o formulário em si está na página de submissão
         self.assertContains(
             self.client.get(reverse("trabalhos")), "https://forms.exemplo.invalid/t"

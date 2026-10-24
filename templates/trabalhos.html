@@ -35,7 +35,9 @@
               <a href="#{{ mostra.slug }}">
                 <span class="atalhos-mostras__nome">{{ mostra.nome }}</span>
                 <span class="atalhos-mostras__estado">
-                  {% if mostra.prazo %}
+                  {% if mostra.encerrada %}
+                    Prazo encerrado em {{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}
+                  {% elif mostra.prazo %}
                     Envios até {{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}
                   {% elif mostra.mostra_botao %}
                     Envio aberto
@@ -50,7 +52,10 @@
       {% else %}
         {% for mostra in mostras %}
           <p class="estado" style="--i:3">
-            {% if mostra.prazo %}
+            {% if mostra.encerrada %}
+              <span class="estado__rotulo">Envio dos trabalhos</span>
+              <b>Prazo encerrado</b>
+            {% elif mostra.prazo %}
               <span class="estado__rotulo">Prazo de envio</span>
               <b>{{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}</b>
             {% else %}
@@ -81,7 +86,7 @@
         </div>
       </header>
 
-      {% if not mostra.documentos and not mostra.etapas.all and not mostra.mostra_botao %}
+      {% if not mostra.documentos and not mostra.etapas.all and not mostra.mostra_botao and not mostra.encerrada %}
         {# Nada publicado ainda: um aviso só, em vez de três caixas vazias seguidas. #}
         <div class="secao secao--fecho">
           <div class="shell">
@@ -94,6 +99,14 @@
         </div>
       {% else %}
 
+        {% comment %}
+          Os documentos vêm do banco (/painel/anexos/). Mostra sem nenhum
+          documento não ganha a seção: um aviso de "ainda não publicados"
+          prometia algo que talvez nem venha. Já um documento cadastrado sem
+          arquivo continua na lista, como "em breve" — esse foi anunciado de
+          propósito, e um botão que não abre nada seria pior que nenhum.
+        {% endcomment %}
+        {% if mostra.documentos %}
         <div class="secao">
           <div class="shell">
             <div class="cabeca-secao">
@@ -101,13 +114,6 @@
               <h3>Documentos</h3>
             </div>
 
-            {% comment %}
-              Os documentos vêm do banco (/painel/anexos/). Um documento ainda
-              sem arquivo continua na lista, como "em breve": a pessoa precisa
-              saber que ele vai existir, e um botão que não abre nada seria
-              pior que nenhum.
-            {% endcomment %}
-            {% if mostra.documentos %}
               <ul class="docs">
                 {% for anexo in mostra.documentos %}
                   <li class="doc revela{% if not anexo.disponivel and not anexo.tem_pagina %} doc--breve{% endif %}"
@@ -153,15 +159,9 @@
                   </li>
                 {% endfor %}
               </ul>
-            {% else %}
-              <div class="vazio">
-                <p class="vazio__titulo">Os documentos ainda não foram publicados</p>
-                <p>O regulamento e os modelos desta mostra ficam aqui assim que a
-                  comissão organizadora divulgar.</p>
-              </div>
-            {% endif %}
           </div>
         </div>
+        {% endif %}
 
         {% comment %}
           As datas vêm do painel, uma etapa por linha, em ordem de data. A
@@ -209,7 +209,9 @@
               <p class="rotulo">Envio · {{ mostra.nome }}</p>
 
               <h3>
-                {% if mostra.mostra_botao %}
+                {% if mostra.encerrada %}
+                  Prazo de envio encerrado
+                {% elif mostra.mostra_botao %}
                   Leu tudo? Então é só enviar.
                 {% else %}
                   O formulário de envio abre em breve
@@ -217,7 +219,11 @@
               </h3>
 
               <p class="envio-final__nota">
-                {% if mostra.mostra_botao %}
+                {% if mostra.encerrada %}
+                  Os envios desta mostra terminaram em
+                  {{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}. Acompanhe
+                  as próximas etapas no cronograma acima.
+                {% elif mostra.mostra_botao %}
                   O envio é feito num formulário fora deste site.
                   {% if mostra.prazo %}
                     Ele fecha em {{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}.
@@ -237,6 +243,8 @@
                     </a>
                   {% endfor %}
                 </p>
+              {% elif mostra.encerrada %}
+                <span class="em-breve">Envio encerrado</span>
               {% else %}
                 <span class="em-breve">Envio em breve</span>
               {% endif %}

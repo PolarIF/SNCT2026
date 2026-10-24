@@ -177,7 +177,9 @@ class SubmissaoForm(forms.ModelForm):
         labels = {"aberta": "Submissão aberta", "prazo": "Prazo de envio"}
         help_texts = {
             "aberta": "Desmarcada, o site mostra “A submissão abre em breve”.",
-            "prazo": "Opcional. Em branco, a página não fala em prazo.",
+            "prazo": "Opcional. É o último dia de envio: no dia seguinte a página "
+            "passa a mostrar “Prazo encerrado” e o botão some sozinho. Em branco, "
+            "a página não fala em prazo.",
         }
         widgets = {
             "resumo": forms.Textarea(attrs={"rows": 6}),
