@@ -41,6 +41,7 @@ class EventoForm(forms.ModelForm):
             "area",
             "local",
             "descricao",
+            "tem_inscricao",
             "link_inscricao",
         ]
         widgets = {

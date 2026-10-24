@@ -22,11 +22,15 @@
     {% endif %}
 
     {% for campo in form.visible_fields %}
-      <div class="campo{% if campo.errors %} campo--erro{% endif %}">
+      <div class="campo{% if campo.errors %} campo--erro{% endif %}{% if campo.name == 'tem_inscricao' %} campo--caixa{% endif %}">
+        {% if campo.name == "tem_inscricao" %}
+          <label for="{{ campo.id_for_label }}">{{ campo }} {{ campo.label }}</label>
+        {% else %}
         <label for="{{ campo.id_for_label }}">
           {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
         </label>
         {{ campo }}
+        {% endif %}
         {% if campo.help_text and not campo.errors %}
           <p class="campo__ajuda">{{ campo.help_text }}</p>
         {% endif %}

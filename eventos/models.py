@@ -100,6 +100,12 @@ class Evento(models.Model):
     # Quando a atividade acontece não mora mais aqui: um evento pode ter mais
     # de um dia e horário, e cada um é uma linha em `horarios`.
     local = models.CharField("local", max_length=120, blank=True)
+    tem_inscricao = models.BooleanField(
+        "esta atividade tem inscrição",
+        default=True,
+        help_text="Desmarque para atividade aberta, em que é só chegar: o "
+        "cronograma não mostra botão de inscrição e avisa que a entrada é livre.",
+    )
     link_inscricao = models.URLField(
         "link de inscrição",
         max_length=300,
@@ -150,10 +156,16 @@ class Evento(models.Model):
     def mostra_botao_inscricao(self):
         """Quando o cronograma mostra o botão de inscrição deste evento.
 
+        Atividade marcada como sem inscrição nunca tem botão: sem isso, uma
+        palestra aberta herdava o "Inscreva-se" do curso e mandava a pessoa
+        para um formulário de que ela não precisava.
+
         Link próprio aparece sempre: quem o colou aqui quis inscrição nesta
         atividade, e não faria sentido depender do interruptor da área. Sem
         link próprio, o botão é o da área e obedece ao interruptor dela.
         """
+        if not self.tem_inscricao:
+            return False
         if self.link_inscricao:
             return True
         return self.area.mostra_botao_inscricao

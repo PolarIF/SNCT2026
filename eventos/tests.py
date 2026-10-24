@@ -116,6 +116,8 @@ class Base(TestCase):
             "titulo": "Evento de teste",
             "local": "Sala 1",
             "descricao": "",
+            # a caixa vem marcada no formulário; caixa desmarcada não vai no POST
+            "tem_inscricao": "on",
             "horarios-TOTAL_FORMS": "1",
             "horarios-INITIAL_FORMS": "0",
             "horarios-MIN_NUM_FORMS": "0",
@@ -1356,6 +1358,47 @@ class InscricaoNoCronograma(Base):
         self.ads.inscricoes_abertas = True
         self.ads.link_inscricao = self.LINK_DA_AREA
         self.ads.save()
+
+    def test_atividade_sem_inscricao_nao_herda_o_botao_do_curso(self):
+        # o caso relatado: palestra aberta, curso com inscrição aberta, e o
+        # cronograma oferecia "Inscreva-se" para quem só precisava chegar
+        self.abrir_a_area()
+        self.ev_ads.tem_inscricao = False
+        self.ev_ads.save()
+
+        r = self.client.get(self.url)
+        self.assertNotContains(r, self.LINK_DA_AREA)
+        self.assertNotContains(r, "Inscreva-se")
+        self.assertContains(r, "Entrada livre, sem inscrição")
+
+    def test_sem_inscricao_vence_ate_o_link_proprio(self):
+        self.ev_ads.link_inscricao = self.LINK_DO_EVENTO
+        self.ev_ads.tem_inscricao = False
+        self.ev_ads.save()
+        self.assertNotContains(self.client.get(self.url), self.LINK_DO_EVENTO)
+
+    def test_uma_atividade_aberta_nao_tira_o_botao_das_outras(self):
+        self.abrir_a_area()
+        outra = Evento.objects.create(titulo="Oficina com vagas", area=self.ads)
+        Horario.objects.create(evento=outra, data=date(2026, 10, 28), hora_inicio=time(9, 0))
+        self.ev_ads.tem_inscricao = False
+        self.ev_ads.save()
+
+        r = self.client.get(self.url)
+        self.assertContains(r, "Inscreva-se", count=1)
+
+    def test_coordenacao_marca_pelo_painel(self):
+        self.entrar("coord_ads")
+        dados = self.dados(titulo="Palestra aberta")
+        del dados["tem_inscricao"]  # caixa desmarcada
+        dados["area"] = str(self.ads.pk)
+        r = self.client.post(reverse("painel:novo"), dados)
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(Evento.objects.get(titulo="Palestra aberta").tem_inscricao)
+
+    def test_evento_novo_vem_com_inscricao(self):
+        # nada muda para o que já estava cadastrado: o padrão é ter inscrição
+        self.assertTrue(Evento(titulo="x", area=self.ads).tem_inscricao)
 
     def test_sem_link_nenhum_nao_ha_botao(self):
         r = self.client.get(self.url)
