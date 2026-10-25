@@ -1,28 +1,20 @@
 {% extends "base.html" %}
 {% load snct %}
 
-{% block titulo %}Submissão de trabalhos — 23ª SNCT · IFRO Campus Ariquemes{% endblock %}
-{% block descricao %}Como enviar um trabalho para a 23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes: as mostras, o regulamento e os modelos de cada uma, as datas e o formulário de envio.{% endblock %}
-{% block og_titulo %}Submissão de trabalhos — 23ª SNCT{% endblock %}
-{% block og_descricao %}Regulamento, modelos, datas e o formulário de envio de cada mostra da 23ª SNCT do IFRO Campus Ariquemes.{% endblock %}
+{% block titulo %}Submissão de trabalhos — {{ site.sigla }} · IFRO Campus Ariquemes{% endblock %}
+{% block descricao %}Como enviar um trabalho para a {{ site.titulo_completo }} do IFRO Campus Ariquemes: as mostras, o regulamento e os modelos de cada uma, as datas e o formulário de envio.{% endblock %}
+{% block og_titulo %}Submissão de trabalhos — {{ site.sigla }}{% endblock %}
+{% block og_descricao %}Regulamento, modelos, datas e o formulário de envio de cada mostra da {{ site.sigla }} do IFRO Campus Ariquemes.{% endblock %}
 
 {% block conteudo %}
 
   <section class="heroi heroi--curto heroi--claro">
     <div class="shell heroi__grade">
-      <p class="rotulo" style="--i:0">23ª SNCT · Campus Ariquemes</p>
+      <p class="rotulo" style="--i:0">{{ site.sigla }} · Campus Ariquemes</p>
       <h1 style="--i:1">Submissão de trabalhos</h1>
-      <p class="lead" style="--i:2">
-        {% if mostras|length > 1 %}
-          Estudantes de qualquer curso podem inscrever trabalhos na semana, em
-          {{ mostras|length }} mostras. Cada uma tem o seu regulamento, as suas
-          datas e o seu formulário: escolha a sua e leia os documentos dela
-          antes de enviar.
-        {% else %}
-          Estudantes de qualquer curso podem inscrever trabalhos na semana.
-          Leia os documentos abaixo antes de enviar.
-        {% endif %}
-      </p>
+      {% if site.trabalhos_texto %}
+        <p class="lead" style="--i:2">{{ site.trabalhos_texto|em_linha }}</p>
+      {% endif %}
 
       {% comment %}
         Os atalhos fazem o papel da antiga tarja de prazo: é a data de cada

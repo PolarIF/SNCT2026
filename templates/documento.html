@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load snct %}
 
-{% block titulo %}{{ anexo.titulo }} — 23ª SNCT · IFRO Campus Ariquemes{% endblock %}
-{% block descricao %}{% if anexo.descricao %}{{ anexo.descricao }}{% else %}{{ anexo.titulo }} da {{ anexo.submissao.nome }} da 23ª SNCT do IFRO Campus Ariquemes.{% endif %}{% endblock %}
-{% block og_titulo %}{{ anexo.titulo }} — 23ª SNCT{% endblock %}
-{% block og_descricao %}{% if anexo.descricao %}{{ anexo.descricao }}{% else %}Submissão de trabalhos da 23ª SNCT do IFRO Campus Ariquemes.{% endif %}{% endblock %}
+{% block titulo %}{{ anexo.titulo }} — {{ site.sigla }} · IFRO Campus Ariquemes{% endblock %}
+{% block descricao %}{% if anexo.descricao %}{{ anexo.descricao }}{% else %}{{ anexo.titulo }} da {{ anexo.submissao.nome }} da {{ site.sigla }} do IFRO Campus Ariquemes.{% endif %}{% endblock %}
+{% block og_titulo %}{{ anexo.titulo }} — {{ site.sigla }}{% endblock %}
+{% block og_descricao %}{% if anexo.descricao %}{{ anexo.descricao }}{% else %}Submissão de trabalhos da {{ site.sigla }} do IFRO Campus Ariquemes.{% endif %}{% endblock %}
 
 {% block conteudo %}
 

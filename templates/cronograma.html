@@ -1,20 +1,20 @@
 {% extends "base.html" %}
+{% load snct %}
 
-{% block titulo %}Cronograma — 23ª SNCT · IFRO Campus Ariquemes{% endblock %}
-{% block descricao %}Cronograma completo da 23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes, de 27 a 30 de outubro de 2026: dia, horário, local e curso de cada atividade.{% endblock %}
-{% block og_titulo %}Cronograma da 23ª SNCT — IFRO Campus Ariquemes{% endblock %}
+{% block titulo %}Cronograma — {{ site.sigla }} · IFRO Campus Ariquemes{% endblock %}
+{% block descricao %}Cronograma completo da {{ site.titulo_completo }} do IFRO Campus Ariquemes, de {{ site.periodo }}: dia, horário, local e curso de cada atividade.{% endblock %}
+{% block og_titulo %}Cronograma da {{ site.sigla }} — IFRO Campus Ariquemes{% endblock %}
 {% block og_descricao %}Todas as atividades da semana, dia por dia, com horário e local.{% endblock %}
 
 {% block conteudo %}
 
   <section class="heroi heroi--curto heroi--claro">
     <div class="shell heroi__grade">
-      <p class="rotulo" style="--i:0">23ª SNCT · Campus Ariquemes</p>
+      <p class="rotulo" style="--i:0">{{ site.sigla }} · Campus Ariquemes</p>
       <h1 style="--i:1">Cronograma</h1>
-      <p class="lead" style="--i:2">
-        Todas as atividades da semana, dia por dia, com horário e local. Esta
-        página é atualizada pelas coordenações.
-      </p>
+      {% if site.cronograma_texto %}
+        <p class="lead" style="--i:2">{{ site.cronograma_texto|em_linha }}</p>
+      {% endif %}
     </div>
   </section>
 

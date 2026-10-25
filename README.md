@@ -34,6 +34,7 @@ Aplicação Django + PostgreSQL, em container, sob o domínio
 | `/painel/` | coordenações | cadastrar os eventos das próprias áreas e abrir/fechar a inscrição delas |
 | `/painel/submissao/<mostra>/` | só o administrador | texto, links, prazo e datas da submissão de uma mostra |
 | `/painel/anexos/` | só o administrador | os documentos da página de submissão |
+| `/painel/site/` | só o administrador | os textos do site: datas da semana, tema, texto de cada seção, programação geral, guia de inscrição, ficha “Sobre” e rodapé |
 | `/painel/cartoes/` | só o administrador | os sete cartões da seção Eventos |
 | `/admin/` | só o administrador | contas, cursos/áreas e todos os eventos |
 
@@ -261,12 +262,29 @@ Algumas coisas que vale saber:
   vez de virar negrito. A única exceção é a palavra *Campus*, que o site põe em
   itálico sozinho.
 
-### 8. Desativar uma conta
+### 8. Trocar os textos do site
+
+Quase tudo o que a página diz fica em `/painel/site/` (**Textos do site** no
+menu lateral): as **datas da semana** (delas saem "27 a 30 de outubro de
+2026", "de terça a sexta", a contagem regressiva e a ficha "Quando"), a
+edição ("23ª"), o tema, o texto de abertura, os títulos e textos de cada
+seção, os **dias da programação geral**, os **passos do guia de inscrição**,
+os **itens da ficha "Sobre"**, o rodapé e a descrição que aparece no Google e
+no WhatsApp. Nos textos, `**assim**` vira negrito e `[texto](https://…)` vira
+link (vale também `mailto:`, `/caminho` e `#âncora`).
+
+Continuam fixos no código: o layout, as cores, o menu e as imagens (a arte
+do topo, a imagem de compartilhamento e as marcas do rodapé).
+
+Para a próxima edição: troque as datas e a edição, e **reescreva a descrição
+de compartilhamento**, que é texto livre e cita as datas.
+
+### 9. Desativar uma conta
 
 **Usuários** → abra a conta → desmarque **Ativo**. Ela deixa de conseguir
 entrar, e os eventos que cadastrou continuam no lugar.
 
-### 9. Trocar uma senha
+### 10. Trocar uma senha
 
 **Usuários** → abra a conta → no campo de senha, clique no link para definir
 uma nova.

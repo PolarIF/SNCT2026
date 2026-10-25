@@ -13,6 +13,10 @@ from django.views.decorators.http import require_http_methods
 from .forms import (
     AnexoForm,
     CartaoForm,
+    DiaDaProgramacaoFormSet,
+    ItemDaFichaFormSet,
+    PassoDaInscricaoFormSet,
+    SiteForm,
     EtapaFormSet,
     EventoForm,
     HorarioFormSet,
@@ -23,6 +27,7 @@ from .forms import (
 from .models import (
     Anexo,
     Area,
+    Site,
     Cartao,
     Evento,
     Horario,
@@ -284,6 +289,46 @@ def submissao(request, slug):
         "painel/submissao.html",
         {"form": form, "links": links, "etapas": etapas, "submissao": submissao},
     )
+
+
+# ------------------------------------------------------- textos do site
+
+
+@so_administrador
+def site(request):
+    """Os textos do site e as três listas deles, numa tela só.
+
+    Tudo é validado antes de qualquer save, como nas outras telas com
+    formset: gravar os textos e só depois descobrir que um dia da
+    programação está sem texto deixaria a página meio trocada.
+    """
+    instancia = Site.atual()
+    conjuntos = [
+        ("dias", "Dias da programação geral", DiaDaProgramacaoFormSet),
+        ("passos", "Passos do guia de inscrição", PassoDaInscricaoFormSet),
+        ("ficha", "Itens da ficha “Sobre”", ItemDaFichaFormSet),
+    ]
+
+    if request.method == "POST":
+        form = SiteForm(request.POST, instance=instancia)
+        listas = [
+            (titulo, cls(request.POST, instance=instancia, prefix=prefixo))
+            for prefixo, titulo, cls in conjuntos
+        ]
+        if form.is_valid() and all(fs.is_valid() for _, fs in listas):
+            form.save()
+            for _, fs in listas:
+                fs.save()
+            messages.success(request, "Textos do site salvos. A página já mostra a versão nova.")
+            return redirect("painel:site")
+    else:
+        form = SiteForm(instance=instancia)
+        listas = [
+            (titulo, cls(instance=instancia, prefix=prefixo))
+            for prefixo, titulo, cls in conjuntos
+        ]
+
+    return render(request, "painel/site.html", {"form": form, "listas": listas})
 
 
 # ------------------------------------------- cartões da página inicial

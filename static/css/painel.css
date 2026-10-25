@@ -645,3 +645,195 @@
   gap: var(--s-xs);
   margin-bottom: var(--s-sm);
 }
+
+/* =====================================================================
+   Painel do administrador
+
+   O administrador mexe em tudo — eventos de todos os cursos, as mostras,
+   os documentos, os cartões e os textos do site —, e numa coluna de 48rem
+   isso virava rolagem sem fim. Ganha um menu lateral fixo e a largura da
+   tela. Tudo aqui depende de .painel--admin (que só o superusuário tem) ou
+   de classes que só aparecem nas telas dele: a coordenação continua com o
+   painel de sempre.
+   ===================================================================== */
+
+.painel--admin .painel__topo .painel__shell,
+.painel--admin .painel__rodape .painel__shell { max-width: none; padding-inline: var(--s-lg); }
+
+.painel__admin-grade {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  min-height: calc(100vh - 4rem);
+  /* o fundo do menu vai até o fim da página, e não só até onde o menu
+     termina: ele é sticky e mais curto que o conteúdo */
+  background: linear-gradient(
+    to right,
+    var(--papel-2) 15rem,
+    var(--linha) 15rem,
+    var(--linha) calc(15rem + 1px),
+    transparent calc(15rem + 1px)
+  );
+}
+
+/* o menu fica parado enquanto a tela rola: é o mapa do painel */
+.painel__nav {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.125rem;
+  padding: var(--s-md) var(--s-sm) var(--s-xl);
+}
+.painel__nav-titulo {
+  margin: var(--s-md) var(--s-xs) var(--s-3xs);
+  font: 700 var(--t-xs)/1.2 var(--fonte-display);
+  font-stretch: 87%;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+.painel__nav-titulo:first-child { margin-top: 0; }
+.painel__nav a {
+  padding: 0.4375rem var(--s-xs);
+  border-radius: var(--r-md);
+  color: var(--tinta);
+  font-size: var(--t-sm);
+  text-decoration: none;
+}
+.painel__nav a:hover { background: var(--papel-3); }
+.painel__nav a[aria-current="page"] {
+  background: var(--verde-100);
+  color: var(--verde-800);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--verde);
+}
+
+.painel__corpo--admin {
+  width: 100%;
+  max-width: 90rem;
+  padding: var(--s-lg) clamp(var(--s-md), 3vw, var(--s-2xl)) var(--s-2xl);
+}
+.painel--admin .painel__quem { max-width: 80ch; }
+
+/* os atalhos do topo da visão geral repetem o menu lateral */
+.painel--admin .atalhos { display: none; }
+
+/* visão geral: estados de um lado, agenda do outro */
+.visao-geral {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
+  gap: var(--s-lg);
+  align-items: start;
+}
+.visao-geral__lado {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: var(--s-md);
+  display: grid;
+  gap: var(--s-md);
+}
+.visao-geral__lado { min-width: 0; }
+.visao-geral__lado .caixa { margin: 0; }
+/* na coluna estreita, o selo de estado sobe para a linha de cima e o nome
+   ganha a largura que sobra — três colunas lado a lado não cabiam */
+.visao-geral__lado .inscricao { grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-3xs) var(--s-xs); }
+.visao-geral__lado .inscricao .estado { grid-column: 1 / -1; justify-self: start; }
+.visao-geral__lado .inscricao__acoes { flex-direction: column; align-items: stretch; }
+.visao-geral__agenda { grid-column: 1; grid-row: 1; min-width: 0; }
+
+/* formulários do administrador: mais largos, e os campos curtos em dupla */
+.painel--admin .formulario { max-width: 64rem; }
+.painel--admin .formulario--largo {
+  max-width: 72rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.grupo-campos {
+  display: grid;
+  gap: var(--s-sm);
+  margin: 0;
+  padding: var(--s-md) var(--s-lg) var(--s-lg);
+}
+.grupo-campos__grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-sm) var(--s-md);
+}
+.grupo-campos__grade .campo { grid-column: 1 / -1; }
+.grupo-campos__grade .campo--curto { grid-column: auto; }
+
+/* as listas dos textos do site: cada item numa linha, campos lado a lado */
+.lista-edicao {
+  margin: var(--s-xs) 0 0;
+  padding: var(--s-sm) var(--s-md) var(--s-md);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-md);
+}
+.lista-edicao legend {
+  padding-inline: var(--s-2xs);
+  font: 700 var(--t-sm)/1.2 var(--fonte-display);
+  color: var(--tinta-2);
+}
+.lista-edicao__linha {
+  display: grid;
+  /* cada lista tem as próprias colunas (abaixo); o texto fica com o resto */
+  grid-template-columns: minmax(0, 1fr) 5rem auto;
+  gap: var(--s-xs) var(--s-sm);
+  align-items: end;
+  padding-block: var(--s-sm);
+}
+.lista-edicao__linha + .lista-edicao__linha { border-top: 1px dashed var(--linha); }
+.lista-edicao--dias .lista-edicao__linha { grid-template-columns: 8rem 10rem minmax(0, 1fr) 5rem 6rem; }
+.lista-edicao--passos .lista-edicao__linha { grid-template-columns: 14rem minmax(0, 1fr) 5rem 6rem; }
+.lista-edicao--ficha .lista-edicao__linha { grid-template-columns: 10rem minmax(0, 1fr) 5rem 6rem; }
+.lista-edicao__linha textarea { min-height: 2.75rem; }
+.lista-edicao__remover {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3xs);
+  padding-bottom: 0.625rem;
+  font-size: var(--t-xs);
+  color: var(--tinta-3);
+}
+
+/* num formulário longo, o salvar acompanha a rolagem */
+.formulario__acoes--fixas {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  padding: var(--s-sm) var(--s-lg);
+  background: oklch(100% 0 0 / 0.92);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--linha);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+
+/* tela estreita: o menu vira uma faixa rolável no alto, e tudo empilha */
+@media (max-width: 62rem) {
+  .painel__admin-grade { grid-template-columns: 1fr; background: none; }
+  .painel__nav {
+    position: static;
+    max-height: none;
+    display: flex;
+    gap: var(--s-2xs);
+    overflow-x: auto;
+    padding: var(--s-xs) var(--s-md);
+    border-right: 0;
+    border-bottom: 1px solid var(--linha);
+    white-space: nowrap;
+  }
+  .painel__nav-titulo { display: none; }
+  .visao-geral { grid-template-columns: 1fr; }
+  .visao-geral__lado { grid-column: 1; grid-row: auto; position: static; }
+  .visao-geral__agenda { grid-row: auto; }
+  .grupo-campos__grade { grid-template-columns: 1fr; }
+  .grupo-campos { padding: var(--s-sm) var(--s-md) var(--s-md); }
+  .lista-edicao .lista-edicao__linha { grid-template-columns: 1fr 1fr; }
+  .lista-edicao__linha .campo--texto { grid-column: 1 / -1; }
+}

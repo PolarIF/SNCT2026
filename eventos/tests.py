@@ -17,7 +17,8 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.dateformat import format as formata_data
 
-from .models import Anexo, Area, Cartao, Etapa, Evento, Horario, LinkDeEnvio, Submissao
+from .forms import SiteForm
+from .models import Anexo, Area, Cartao, Etapa, Evento, Horario, LinkDeEnvio, Site, Submissao
 
 
 def daqui_a(dias):
@@ -1986,3 +1987,142 @@ class EventoComVariosHorarios(Base):
         self.entrar("coord_ads")
         self.client.post(reverse("painel:excluir", args=[evento.pk]))
         self.assertFalse(Horario.objects.filter(evento_id=evento.pk).exists())
+
+
+class TextosDoSite(Base):
+    """O que era HTML fixo — datas, títulos, a ficha — vem do painel."""
+
+    def setUp(self):
+        self.site = Site.atual()
+
+    def dados(self, **troca):
+        """O POST da tela de textos, com as três listas como estão no banco."""
+        base = {campo: getattr(self.site, campo) for campo in SiteForm.Meta.fields}
+        base["data_inicio"] = self.site.data_inicio.isoformat()
+        base["data_fim"] = self.site.data_fim.isoformat()
+        for prefixo, itens, campos in [
+            ("dias", self.site.dias_da_programacao, ["rotulo", "dia_da_semana", "texto", "ordem"]),
+            ("passos", self.site.passos_da_inscricao, ["titulo", "texto", "ordem"]),
+            ("ficha", self.site.itens_da_ficha, ["rotulo", "texto", "ordem"]),
+        ]:
+            itens = list(itens)
+            base[f"{prefixo}-TOTAL_FORMS"] = str(len(itens))
+            base[f"{prefixo}-INITIAL_FORMS"] = str(len(itens))
+            base[f"{prefixo}-MIN_NUM_FORMS"] = "0"
+            base[f"{prefixo}-MAX_NUM_FORMS"] = "1000"
+            for i, item in enumerate(itens):
+                base[f"{prefixo}-{i}-id"] = str(item.pk)
+                for campo in campos:
+                    base[f"{prefixo}-{i}-{campo}"] = getattr(item, campo)
+        base.update(troca)
+        return base
+
+    def test_a_migracao_traz_os_textos_que_estavam_no_ar(self):
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "27 a 30 de outubro de 2026")
+        self.assertContains(r, "Como a semana se divide")
+        self.assertContains(r, "Feira das Profissões e Empreendedorismo")
+        self.assertContains(r, "Sete eventos, inscrição por evento")
+        self.assertContains(r, "Uma semana para mostrar o que se faz aqui")
+        self.assertContains(r, 'href="mailto:depesp.ariquemes@ifro.edu.br"')
+
+    def test_as_datas_saem_por_extenso(self):
+        s = Site(data_inicio=date(2026, 10, 27), data_fim=date(2026, 10, 30))
+        self.assertEqual(s.periodo, "27 a 30 de outubro de 2026")
+        self.assertEqual(s.dias_da_semana, "de terça a sexta")
+        s = Site(data_inicio=date(2026, 9, 30), data_fim=date(2026, 10, 2))
+        self.assertEqual(s.periodo, "30 de setembro a 2 de outubro de 2026")
+
+    def test_trocar_as_datas_muda_o_site_inteiro(self):
+        self.entrar("admin")
+        r = self.client.post(
+            reverse("painel:site"),
+            self.dados(edicao="24ª", data_inicio="2027-10-19", data_fim="2027-10-22"),
+        )
+        self.assertEqual(r.status_code, 302)
+
+        self.client.logout()
+        home = self.client.get(reverse("home")).content.decode()
+        self.assertIn("19 a 22 de outubro de 2027", home)
+        self.assertIn("de terça a sexta", home)
+        self.assertIn('data-inicio="2027-10-19T08:00:00-04:00"', home)
+        self.assertIn("24ª <b>SNCT</b>", home)
+        # o que sobra da data antiga é texto livre ou arte fixa: a descrição de
+        # compartilhamento (que o administrador reescreve) e o alt da imagem
+        corpo = home[home.index("<body>"):]
+        corpo = corpo.replace('alt="23ª Semana Nacional de Ciência e Tecnologia — tema Ciência Delas"', "")
+        self.assertNotIn("27 a 30 de outubro de 2026", corpo)
+        # o título da aba das outras páginas também
+        self.assertContains(self.client.get(reverse("cronograma")), "24ª SNCT")
+
+    def test_ultimo_dia_antes_do_primeiro_e_recusado(self):
+        self.entrar("admin")
+        r = self.client.post(
+            reverse("painel:site"), self.dados(data_inicio="2026-10-30", data_fim="2026-10-27")
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Site.atual().data_fim, date(2026, 10, 30))
+
+    def test_acrescentar_um_dia_na_programacao(self):
+        self.entrar("admin")
+        dados = self.dados()
+        n = int(dados["dias-TOTAL_FORMS"])
+        dados["dias-TOTAL_FORMS"] = str(n + 1)
+        dados.update({f"dias-{n}-rotulo": "31/10", f"dias-{n}-dia_da_semana": "sábado",
+                      f"dias-{n}-texto": "Encerramento", f"dias-{n}-ordem": "9"})
+        self.assertEqual(self.client.post(reverse("painel:site"), dados).status_code, 302)
+
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertLess(html.index("29 e 30/10"), html.index("31/10"))
+        self.assertIn("Encerramento", html)
+
+    def test_html_digitado_nao_vira_marcacao(self):
+        self.entrar("admin")
+        self.client.post(reverse("painel:site"), self.dados(heroi_texto="<script>alert(1)</script>"))
+        r = self.client.get(reverse("home"))
+        self.assertNotContains(r, "<script>alert(1)</script>")
+        self.assertContains(r, "&lt;script&gt;")
+
+    def test_link_javascript_fica_como_texto(self):
+        self.entrar("admin")
+        self.client.post(reverse("painel:site"), self.dados(guia_nota="[clique](javascript:alert(1))"))
+        r = self.client.get(reverse("home"))
+        self.assertNotContains(r, 'href="javascript:')
+
+    def test_coordenacao_nao_abre_a_tela(self):
+        self.entrar("coord_ads")
+        self.assertEqual(self.client.get(reverse("painel:site")).status_code, 404)
+
+    def test_coordenacao_nao_altera_por_post_direto(self):
+        self.entrar("coord_ads")
+        r = self.client.post(reverse("painel:site"), self.dados(sobre_titulo="Invadido"))
+        self.assertEqual(r.status_code, 404)
+        self.assertNotEqual(Site.atual().sobre_titulo, "Invadido")
+
+    def test_e_sempre_a_mesma_linha(self):
+        Site.atual().save()
+        self.assertEqual(Site.objects.count(), 1)
+
+
+class PainelDoAdministrador(Base):
+    """O administrador ganha menu lateral; a coordenação não vê nada disso."""
+
+    def test_administrador_ve_o_menu_lateral(self):
+        self.entrar("admin")
+        r = self.client.get(reverse("painel:lista"))
+        self.assertContains(r, 'class="painel__nav"')
+        self.assertContains(r, reverse("painel:site"))
+        self.assertContains(r, reverse("painel:submissao", args=["mostra-cientifica"]))
+
+    def test_o_item_da_tela_atual_fica_marcado(self):
+        self.entrar("admin")
+        r = self.client.get(reverse("painel:site")).content.decode()
+        self.assertIn(f'href="{reverse("painel:site")}" aria-current="page"', r)
+
+    def test_coordenacao_continua_sem_menu_lateral(self):
+        self.entrar("coord_ads")
+        r = self.client.get(reverse("painel:lista"))
+        self.assertNotContains(r, "painel__nav")
+        self.assertNotContains(r, "painel--admin")
+        self.assertNotContains(r, "visao-geral")
+        self.assertNotContains(r, "Textos do site")
