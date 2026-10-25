@@ -232,6 +232,9 @@ a { color: inherit; }
 
 .prosa { max-width: var(--prosa); }
 .prosa + .prosa { margin-top: var(--s-sm); }
+/* o texto do "Sobre" vem do painel, em parágrafos que o filtro texto_rico
+   monta — não dá para pôr a classe em cada um */
+.sobre__prosa p + p { margin-top: var(--s-sm); }
 
 .cabeca-secao {
   display: grid;

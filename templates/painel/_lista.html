@@ -1,0 +1,31 @@
+{% comment %}
+  Uma lista editável (formset) dos textos do site: uma linha por item, com
+  uma linha vazia de sobra para acrescentar. Salvar e voltar traz outra
+  linha vazia — dá para acrescentar sem depender de JavaScript.
+{% endcomment %}
+<fieldset class="lista-edicao lista-edicao--{{ lista.prefix }}" id="lista-{{ lista.prefix }}">
+  <legend>{{ titulo }}</legend>
+  {{ lista.management_form }}
+  {% if lista.non_form_errors %}
+    <p class="aviso aviso--error">{{ lista.non_form_errors|join:" " }}</p>
+  {% endif %}
+
+  {% for linha in lista %}
+    <div class="lista-edicao__linha">
+      {{ linha.id }}
+      {% for campo in linha.visible_fields %}
+        {% if campo.name != "DELETE" %}
+          <div class="campo campo--{{ campo.name }}{% if campo.errors %} campo--erro{% endif %}">
+            <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {{ campo }}
+            {% for erro in campo.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+      {% if linha.instance.pk %}
+        <label class="lista-edicao__remover">{{ linha.DELETE }} Remover</label>
+      {% endif %}
+    </div>
+  {% endfor %}
+  <p class="campo__ajuda">A linha vazia no fim é para acrescentar; em branco, é ignorada. Ordem: menor primeiro.</p>
+</fieldset>

@@ -5,7 +5,11 @@ from .models import (
     Anexo,
     Area,
     Cartao,
+    DiaDaProgramacao,
     Etapa,
+    ItemDaFicha,
+    PassoDaInscricao,
+    Site,
     Evento,
     Horario,
     LinkDeEnvio,
@@ -358,3 +362,91 @@ class AnexoForm(forms.ModelForm):
                 f"{limite} MB. Comprima o PDF ou publique em outro lugar e use o link."
             )
         return arquivo
+
+
+# ----------------------------------------------------------- textos do site
+
+
+class SiteForm(forms.ModelForm):
+    """Os textos do site. Os campos vêm agrupados na ordem em que aparecem
+    na página — é `GRUPOS` que o template percorre."""
+
+    GRUPOS = [
+        (
+            "A semana",
+            "De onde saem o título, as datas por extenso, a contagem regressiva "
+            "e a ficha “Quando/Onde”.",
+            ["edicao", "tema", "nome", "data_inicio", "data_fim", "local"],
+        ),
+        ("Topo da página inicial", "", ["heroi_texto"]),
+        ("Programação geral", "Os dias ficam na lista logo abaixo.", ["programacao_titulo"]),
+        (
+            "Eventos e inscrição",
+            "Os passos do guia ficam na lista logo abaixo.",
+            ["eventos_titulo", "eventos_texto", "guia_titulo", "guia_subtitulo", "guia_nota"],
+        ),
+        ("Sobre", "Os itens da ficha ficam na lista logo abaixo.", ["sobre_titulo", "sobre_texto"]),
+        ("Outras páginas", "", ["cronograma_texto", "trabalhos_texto"]),
+        ("Rodapé e compartilhamento", "", ["descricao", "rodape_credito", "portal_url"]),
+    ]
+
+    # campo curto: dividem a linha com outro no desktop
+    CURTOS = {"edicao", "tema", "data_inicio", "data_fim", "rodape_credito", "portal_url"}
+
+    class Meta:
+        model = Site
+        fields = [
+            "edicao", "nome", "tema", "data_inicio", "data_fim", "local",
+            "heroi_texto", "programacao_titulo",
+            "eventos_titulo", "eventos_texto", "guia_titulo", "guia_subtitulo", "guia_nota",
+            "sobre_titulo", "sobre_texto",
+            "cronograma_texto", "trabalhos_texto",
+            "descricao", "rodape_credito", "portal_url",
+        ]
+        widgets = {
+            "data_inicio": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "data_fim": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "heroi_texto": forms.Textarea(attrs={"rows": 3}),
+            "eventos_texto": forms.Textarea(attrs={"rows": 3}),
+            "guia_nota": forms.Textarea(attrs={"rows": 2}),
+            "sobre_texto": forms.Textarea(attrs={"rows": 8}),
+            "cronograma_texto": forms.Textarea(attrs={"rows": 3}),
+            "trabalhos_texto": forms.Textarea(attrs={"rows": 3}),
+            "descricao": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def grupos(self):
+        """[(título, ajuda, [campos])], para o template desenhar por seção."""
+        return [
+            (titulo, ajuda, [self[nome] for nome in nomes])
+            for titulo, ajuda, nomes in self.GRUPOS
+        ]
+
+
+DiaDaProgramacaoFormSet = forms.inlineformset_factory(
+    Site,
+    DiaDaProgramacao,
+    fields=["rotulo", "dia_da_semana", "texto", "ordem"],
+    labels={"rotulo": "Dia", "dia_da_semana": "Dia da semana", "texto": "O que acontece"},
+    extra=1,
+    can_delete=True,
+)
+
+PassoDaInscricaoFormSet = forms.inlineformset_factory(
+    Site,
+    PassoDaInscricao,
+    fields=["titulo", "texto", "ordem"],
+    labels={"titulo": "Passo", "texto": "Explicação"},
+    widgets={"texto": forms.Textarea(attrs={"rows": 2})},
+    extra=1,
+    can_delete=True,
+)
+
+ItemDaFichaFormSet = forms.inlineformset_factory(
+    Site,
+    ItemDaFicha,
+    fields=["rotulo", "texto", "ordem"],
+    labels={"rotulo": "Rótulo", "texto": "Texto"},
+    extra=1,
+    can_delete=True,
+)

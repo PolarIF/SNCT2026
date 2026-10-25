@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
 <link rel="stylesheet" href="{% static 'css/painel.css' %}">
 </head>
-<body class="painel">
+<body class="painel{% if user.is_superuser %} painel--admin{% endif %}">
 
 <header class="painel__topo">
   <div class="painel__shell">
@@ -38,7 +38,38 @@
   </div>
 </header>
 
+{% comment %}
+  O administrador mexe em tudo, e em telas longas: ganha menu lateral e a
+  largura da tela. A coordenação continua com a coluna estreita de sempre —
+  é a tela a que ela já está acostumada, e ela só mexe em uma ou duas coisas.
+{% endcomment %}
+{% if user.is_superuser %}
+  {% with rota=request.resolver_match.url_name %}
+  <div class="painel__admin-grade">
+    <nav class="painel__nav" aria-label="Seções do painel">
+      <p class="painel__nav-titulo">Semana</p>
+      <a href="{% url 'painel:lista' %}"{% if rota == 'lista' %} aria-current="page"{% endif %}>Visão geral</a>
+      <a href="{% url 'painel:novo' %}"{% if rota == 'novo' %} aria-current="page"{% endif %}>+ Novo evento</a>
+
+      <p class="painel__nav-titulo">Submissão de trabalhos</p>
+      {% for m in painel_mostras %}
+        <a href="{% url 'painel:submissao' m.slug %}"{% if rota == 'submissao' and request.resolver_match.kwargs.slug == m.slug %} aria-current="page"{% endif %}>{{ m.nome }}</a>
+      {% endfor %}
+      <a href="{% url 'painel:anexos' %}"{% if rota|slice:":5" == 'anexo' %} aria-current="page"{% endif %}>Documentos</a>
+
+      <p class="painel__nav-titulo">Página</p>
+      <a href="{% url 'painel:site' %}"{% if rota == 'site' %} aria-current="page"{% endif %}>Textos do site</a>
+      <a href="{% url 'painel:cartoes' %}"{% if rota|slice:":6" == 'cartao' %} aria-current="page"{% endif %}>Cartões dos eventos</a>
+
+      <p class="painel__nav-titulo">Contas</p>
+      <a href="/admin/auth/user/">Coordenações e senhas</a>
+      <a href="/admin/eventos/area/">Cursos/áreas</a>
+    </nav>
+  {% endwith %}
+    <main class="painel__corpo painel__corpo--admin">
+{% else %}
 <main class="painel__shell painel__corpo">
+{% endif %}
   {% if messages %}
     <ul class="avisos">
       {% for m in messages %}
@@ -49,6 +80,7 @@
 
   {% block conteudo %}{% endblock %}
 </main>
+{% if user.is_superuser %}</div>{% endif %}
 
 <footer class="painel__rodape">
   <div class="painel__shell">

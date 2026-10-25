@@ -760,3 +760,222 @@ def areas_do_usuario(user):
     if user.is_superuser:
         return Area.objects.filter(ativo=True)
     return user.areas_geridas.filter(ativo=True)
+
+
+# ------------------------------------------------------------ textos do site
+
+DIAS_DA_SEMANA = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
+MESES = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+]
+
+
+class Site(models.Model):
+    """Os textos do site que não são de nenhum curso nem de nenhuma mostra.
+
+    Eram HTML fixo nos templates: as datas da semana (que apareciam em meia
+    dúzia de lugares), o tema, o texto de cada seção da página inicial, o
+    rodapé. Viraram dado pela mesma razão de todo o resto: o site roda em
+    container, e trocar uma frase não pode exigir reimplantar.
+
+    É uma linha só, criada pela migração, e carregada por `Site.atual()` em
+    toda página (ver eventos/context_processors.py). As datas ficam em campo
+    de data, e não em texto, porque é delas que saem "27 a 30 de outubro de
+    2026", "de terça a sexta" e a contagem regressiva — escrever as três à
+    mão era o jeito de uma delas ficar errada.
+
+    O que continua fixo no código: o layout, as cores, o menu e as imagens.
+    """
+
+    # a semana
+    edicao = models.CharField(
+        "edição", max_length=10, help_text="Como aparece antes de “SNCT”, ex.: “23ª”."
+    )
+    nome = models.CharField("nome do evento", max_length=120)
+    tema = models.CharField("tema", max_length=80, blank=True)
+    data_inicio = models.DateField("primeiro dia")
+    data_fim = models.DateField("último dia")
+    local = models.CharField(
+        "onde", max_length=160, help_text="Aparece na ficha da seção “Sobre”."
+    )
+
+    # página inicial
+    heroi_texto = models.TextField(
+        "texto de abertura",
+        help_text="O parágrafo do topo da página inicial, abaixo da logo.",
+    )
+    programacao_titulo = models.CharField("título da programação geral", max_length=120)
+    eventos_titulo = models.CharField("título da seção de eventos", max_length=120)
+    eventos_texto = models.TextField("texto da seção de eventos", blank=True)
+    guia_titulo = models.CharField("título do guia de inscrição", max_length=80)
+    guia_subtitulo = models.CharField(
+        "subtítulo do guia de inscrição", max_length=120, blank=True
+    )
+    guia_nota = models.TextField(
+        "nota no fim do guia",
+        blank=True,
+        help_text="Uma linha abaixo dos passos. Em branco, não aparece.",
+    )
+    sobre_titulo = models.CharField("título da seção “Sobre”", max_length=120)
+    sobre_texto = models.TextField("texto da seção “Sobre”")
+
+    # outras páginas
+    cronograma_texto = models.TextField(
+        "texto de abertura do cronograma", blank=True
+    )
+    trabalhos_texto = models.TextField(
+        "texto de abertura da submissão",
+        blank=True,
+        help_text="O parágrafo do topo de /trabalhos/.",
+    )
+
+    # rodapé e compartilhamento
+    descricao = models.CharField(
+        "descrição para buscadores e WhatsApp",
+        max_length=300,
+        help_text="O resumo que aparece embaixo do link no Google e quando o "
+        "site é compartilhado.",
+    )
+    rodape_credito = models.CharField("crédito no rodapé", max_length=120, blank=True)
+    portal_url = models.URLField(
+        "link do portal do Campus", max_length=300, blank=True
+    )
+
+    class Meta:
+        verbose_name = "textos do site"
+        verbose_name_plural = "textos do site"
+
+    def __str__(self):
+        return "Textos do site"
+
+    def save(self, *args, **kwargs):
+        # Uma linha só: qualquer save escreve sempre na mesma.
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        if self.data_inicio and self.data_fim and self.data_fim < self.data_inicio:
+            raise ValidationError(
+                {"data_fim": "O último dia tem que ser depois do primeiro."}
+            )
+
+    @classmethod
+    def atual(cls):
+        """Os textos do site. A linha vem da migração; se alguém a apagar,
+        devolve uma em branco em vez de derrubar todas as páginas."""
+        return cls.objects.filter(pk=1).first() or cls()
+
+    # As três listas, com nome de gente: o Django chamaria de *_set.
+    @property
+    def dias_da_programacao(self):
+        return self.diadaprogramacao_set.all()
+
+    @property
+    def passos_da_inscricao(self):
+        return self.passodainscricao_set.all()
+
+    @property
+    def itens_da_ficha(self):
+        return self.itemdaficha_set.all()
+
+    @property
+    def sigla(self):
+        """“23ª SNCT”."""
+        return f"{self.edicao} SNCT".strip()
+
+    @property
+    def titulo_completo(self):
+        """“23ª Semana Nacional de Ciência e Tecnologia”."""
+        return f"{self.edicao} {self.nome}".strip()
+
+    @property
+    def periodo(self):
+        """“27 a 30 de outubro de 2026”, ou “30 de setembro a 2 de outubro de
+        2026” quando a semana atravessa o mês."""
+        ini, fim = self.data_inicio, self.data_fim
+        if not ini or not fim:
+            return ""
+        if ini == fim:
+            return f"{ini.day} de {MESES[ini.month - 1]} de {ini.year}"
+        if (ini.month, ini.year) == (fim.month, fim.year):
+            return f"{ini.day} a {fim.day} de {MESES[fim.month - 1]} de {fim.year}"
+        if ini.year == fim.year:
+            return (
+                f"{ini.day} de {MESES[ini.month - 1]} a "
+                f"{fim.day} de {MESES[fim.month - 1]} de {fim.year}"
+            )
+        return (
+            f"{ini.day} de {MESES[ini.month - 1]} de {ini.year} a "
+            f"{fim.day} de {MESES[fim.month - 1]} de {fim.year}"
+        )
+
+    @property
+    def dias_da_semana(self):
+        """“de terça a sexta”."""
+        ini, fim = self.data_inicio, self.data_fim
+        if not ini or not fim or ini == fim:
+            return ""
+        return f"de {DIAS_DA_SEMANA[ini.weekday()]} a {DIAS_DA_SEMANA[fim.weekday()]}"
+
+
+class ItemDoSite(models.Model):
+    """Base das três listas que pertencem aos textos do site."""
+
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    ordem = models.PositiveSmallIntegerField("ordem", default=0)
+
+    class Meta:
+        abstract = True
+        ordering = ["ordem", "pk"]
+
+
+class DiaDaProgramacao(ItemDoSite):
+    """Um cartão da “Programação geral”: o dia e o que acontece nele."""
+
+    rotulo = models.CharField(
+        "dia", max_length=40, help_text="Como aparece no cartão, ex.: “29 e 30/10”."
+    )
+    dia_da_semana = models.CharField(
+        "dia da semana", max_length=40, blank=True, help_text="Ex.: “quinta e sexta”."
+    )
+    texto = models.CharField("o que acontece", max_length=300)
+
+    class Meta(ItemDoSite.Meta):
+        verbose_name = "dia da programação geral"
+        verbose_name_plural = "dias da programação geral"
+
+    def __str__(self):
+        return self.rotulo
+
+
+class PassoDaInscricao(ItemDoSite):
+    """Um passo do guia “Como se inscrever”."""
+
+    titulo = models.CharField("passo", max_length=80)
+    texto = models.TextField("explicação")
+
+    class Meta(ItemDoSite.Meta):
+        verbose_name = "passo do guia de inscrição"
+        verbose_name_plural = "passos do guia de inscrição"
+
+    def __str__(self):
+        return self.titulo
+
+
+class ItemDaFicha(ItemDoSite):
+    """Uma linha da ficha da seção “Sobre” (Para quem, Contato…).
+
+    “Quando” e “Onde” não são itens: saem das datas e do local da semana, e
+    aparecem sempre primeiro.
+    """
+
+    rotulo = models.CharField("rótulo", max_length=40)
+    texto = models.CharField("texto", max_length=300)
+
+    class Meta(ItemDoSite.Meta):
+        verbose_name = "item da ficha"
+        verbose_name_plural = "itens da ficha"
+
+    def __str__(self):
+        return self.rotulo

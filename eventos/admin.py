@@ -7,7 +7,20 @@ from django.contrib.auth.models import Group, User
 
 from config.observabilidade import contexto_atual
 
-from .models import Anexo, Area, Cartao, Etapa, Evento, Horario, LinkDeEnvio, Submissao
+from .models import (
+    Anexo,
+    Area,
+    Cartao,
+    DiaDaProgramacao,
+    Etapa,
+    Evento,
+    Horario,
+    ItemDaFicha,
+    LinkDeEnvio,
+    PassoDaInscricao,
+    Site,
+    Submissao,
+)
 
 
 class _AuditoriaContextoMixin:
@@ -346,3 +359,33 @@ class AnexoAdmin(_AuditoriaContextoMixin, admin.ModelAdmin):
     @admin.display(description="formato")
     def formato(self, obj):
         return obj.formato
+
+
+class DiaDaProgramacaoInline(admin.TabularInline):
+    model = DiaDaProgramacao
+    extra = 0
+
+
+class PassoDaInscricaoInline(admin.TabularInline):
+    model = PassoDaInscricao
+    extra = 0
+
+
+class ItemDaFichaInline(admin.TabularInline):
+    model = ItemDaFicha
+    extra = 0
+
+
+@admin.register(Site)
+class SiteAdmin(admin.ModelAdmin):
+    """Os textos do site. O caminho normal é /painel/site/; isto é a rede de
+    segurança de quem já está no /admin/. Uma linha só: não se cria nem se
+    apaga."""
+
+    inlines = [DiaDaProgramacaoInline, PassoDaInscricaoInline, ItemDaFichaInline]
+
+    def has_add_permission(self, request):
+        return not Site.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False

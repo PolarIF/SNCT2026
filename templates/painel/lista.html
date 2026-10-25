@@ -30,6 +30,13 @@
     </p>
   {% endif %}
 
+  {% comment %}
+    Para o administrador, duas colunas: os estados (mostras e inscrições) de
+    um lado, a agenda do outro. As divs só existem para ele — o HTML da
+    coordenação continua exatamente o mesmo de antes.
+  {% endcomment %}
+  {% if user.is_superuser %}<div class="visao-geral"><div class="visao-geral__lado">{% endif %}
+
   {% if mostras %}
     <section class="inscricoes caixa">
       <h2 class="inscricoes__titulo painel__rotulo">Submissão de trabalhos</h2>
@@ -94,6 +101,8 @@
       </ul>
     </section>
   {% endif %}
+
+  {% if user.is_superuser %}</div><div class="visao-geral__agenda">{% endif %}
 
   {% if not areas %}
     <div class="vazio">
@@ -201,4 +210,5 @@
 
   {% endif %}
 
+  {% if user.is_superuser %}</div></div>{% endif %}
 {% endblock %}

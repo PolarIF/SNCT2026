@@ -1,0 +1,60 @@
+{% extends "painel/base.html" %}
+
+{% block titulo %}Textos do site{% endblock %}
+
+{% block conteudo %}
+  <div class="painel__cabeca">
+    <div>
+      <h1>Textos do site</h1>
+      <p class="painel__quem">
+        Tudo o que a página diz e não é de um curso nem de uma mostra, na ordem
+        em que aparece no site. Nos textos, <code>**assim**</code> vira negrito
+        e <code>[texto](https://endereço)</code> vira link.
+      </p>
+    </div>
+    <a class="botao botao--linha" href="{% url 'home' %}" target="_blank" rel="noopener">Ver o site ↗</a>
+  </div>
+
+  <form method="post" class="formulario formulario--largo" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <p class="aviso aviso--error">{{ form.non_field_errors|join:" " }}</p>
+    {% endif %}
+
+    {% for titulo, ajuda, campos in form.grupos %}
+      <section class="grupo-campos caixa">
+        <h2 class="painel__rotulo">{{ titulo }}</h2>
+        {% if ajuda %}<p class="campo__ajuda">{{ ajuda }}</p>{% endif %}
+
+        <div class="grupo-campos__grade">
+          {% for campo in campos %}
+            <div class="campo{% if campo.name in form.CURTOS %} campo--curto{% endif %}{% if campo.errors %} campo--erro{% endif %}">
+              <label for="{{ campo.id_for_label }}">
+                {{ campo.label }}{% if not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}
+              </label>
+              {{ campo }}
+              {% if campo.help_text and not campo.errors %}<p class="campo__ajuda">{{ campo.help_text }}</p>{% endif %}
+              {% for erro in campo.errors %}<p class="campo__erro">{{ erro }}</p>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+
+        {# as listas entram logo depois do grupo de que fazem parte #}
+        {% if titulo == "Programação geral" %}
+          {% with lista=listas.0.1 titulo=listas.0.0 %}{% include "painel/_lista.html" %}{% endwith %}
+        {% elif titulo == "Eventos e inscrição" %}
+          {% with lista=listas.1.1 titulo=listas.1.0 %}{% include "painel/_lista.html" %}{% endwith %}
+        {% elif titulo == "Sobre" %}
+          {% with lista=listas.2.1 titulo=listas.2.0 %}{% include "painel/_lista.html" %}{% endwith %}
+        {% endif %}
+      </section>
+    {% endfor %}
+
+    {# fixa no pé da tela: num formulário deste tamanho, o botão de salvar não pode morar só no fim #}
+    <div class="formulario__acoes formulario__acoes--fixas">
+      <button type="submit" class="botao botao--acao">Salvar textos</button>
+      <a class="botao botao--linha" href="{% url 'painel:lista' %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

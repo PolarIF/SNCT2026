@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>{% block titulo %}23ª Semana Nacional de Ciência e Tecnologia — IFRO Campus Ariquemes{% endblock %}</title>
-<meta name="description" content="{% block descricao %}23ª Semana Nacional de Ciência e Tecnologia do IFRO Campus Ariquemes, de 27 a 30 de outubro de 2026. Tema: Ciência Delas. Programação, eventos e inscrições.{% endblock %}">
+<title>{% block titulo %}{{ site.titulo_completo }} — IFRO Campus Ariquemes{% endblock %}</title>
+<meta name="description" content="{% block descricao %}{{ site.descricao }}{% endblock %}">
 <link rel="canonical" href="{{ request.build_absolute_uri }}">
 <meta name="author" content="Instituto Federal de Rondônia — Campus Ariquemes">
 <meta name="theme-color" content="#123B1C">
@@ -14,8 +14,8 @@
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="SNCT — IFRO Campus Ariquemes">
 <meta property="og:url" content="{{ request.build_absolute_uri }}">
-<meta property="og:title" content="{% block og_titulo %}23ª Semana Nacional de Ciência e Tecnologia — IFRO Campus Ariquemes{% endblock %}">
-<meta property="og:description" content="{% block og_descricao %}De 27 a 30 de outubro de 2026. Tema: Ciência Delas. Feiras, oficinas, mostras e seminários abertos à comunidade.{% endblock %}">
+<meta property="og:title" content="{% block og_titulo %}{{ site.titulo_completo }} — IFRO Campus Ariquemes{% endblock %}">
+<meta property="og:description" content="{% block og_descricao %}{{ site.descricao }}{% endblock %}">
 <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-snct-ifro-ariquemes.png' %}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -38,10 +38,10 @@
 
 <header class="topo" id="topo">
   <div class="shell topo__barra">
-    <a class="marca" href="{% url 'home' %}" aria-label="23ª SNCT — IFRO Campus Ariquemes, início da página">
+    <a class="marca" href="{% url 'home' %}" aria-label="{{ site.sigla }} — IFRO Campus Ariquemes, início da página">
       <img class="marca__logo" src="{% static 'img/ifro-lockup.svg' %}" width="205" height="65"
            alt="Instituto Federal de Rondônia — Campus Ariquemes">
-      <span class="marca__sigla">23ª <b>SNCT</b></span>
+      <span class="marca__sigla">{{ site.edicao }} <b>SNCT</b></span>
     </a>
 
     <nav class="menu" aria-label="Seções da página">
@@ -118,7 +118,7 @@
       <div>
         {# As marcas saíram daqui: estão todas na fileira acima, numa linha só. #}
         <p>
-          23ª Semana Nacional de Ciência e Tecnologia · 27 a 30 de outubro de 2026 ·
+          {{ site.titulo_completo }} · {{ site.periodo }} ·
           <i>Campus</i> Ariquemes
         </p>
       </div>
@@ -128,14 +128,16 @@
         <a href="{% url 'cronograma' %}">Cronograma</a>
         <a href="{% url 'home' %}#eventos">Eventos e inscrições</a>
         <a href="{% url 'home' %}#sobre">Sobre a semana</a>
-        <a href="https://portal.ifro.edu.br/ariquemes" target="_blank" rel="noopener">Portal do <i>Campus</i></a>
+        {% if site.portal_url %}
+          <a href="{{ site.portal_url }}" target="_blank" rel="noopener">Portal do <i>Campus</i></a>
+        {% endif %}
       </nav>
     </div>
 
     <p class="rodape__base">
       <span>Instituto Federal de Educação, Ciência e Tecnologia de Rondônia</span>
       <span>snctifroari.online</span>
-      <span class="rodape__credito">Feito por Júlio Sabaini</span>
+      {% if site.rodape_credito %}<span class="rodape__credito">{{ site.rodape_credito }}</span>{% endif %}
     </p>
   </div>
 </footer>

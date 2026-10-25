@@ -32,7 +32,7 @@
 
         <p class="heroi__data" style="--i:1">
           <span class="modulo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-          27 a 30 de outubro de 2026
+          {{ site.periodo }}
         </p>
 
         {% comment %}
@@ -47,10 +47,7 @@
                fetchpriority="high">
         </h1>
 
-        <p class="lead" style="--i:3">
-          Quatro dias de feiras, oficinas, mostras e seminários abertos à comunidade
-          escolar e ao público externo, no Instituto Federal de Rondônia.
-        </p>
+        <p class="lead" style="--i:3">{{ site.heroi_texto|em_linha }}</p>
 
         <p class="heroi__acoes" style="--i:4">
           <a class="botao botao--acao" href="#programacao">
@@ -67,8 +64,9 @@
            alt="Instituto Federal de Rondônia — Campus Ariquemes">
 
       <!-- preenchida pelo JS a partir de data-inicio/data-fim; sem JS, não aparece -->
-      <p class="contagem" id="contagem" data-inicio="2026-10-27T08:00:00-04:00"
-         data-fim="2026-10-30T23:59:00-04:00" hidden></p>
+      {# -04:00 é o fuso de Ariquemes, o mesmo do TIME_ZONE do Django. #}
+      <p class="contagem" id="contagem" data-inicio="{{ site.data_inicio|date:'Y-m-d' }}T08:00:00-04:00"
+         data-fim="{{ site.data_fim|date:'Y-m-d' }}T23:59:00-04:00" hidden></p>
     </div>
   </section>
 
@@ -87,7 +85,7 @@
           <span class="rotulo rotulo--claro">Submissão de trabalhos</span>
         </p>
 
-        <h2>Envie seu trabalho para a 23ª SNCT</h2>
+        <h2>Envie seu trabalho para a {{ site.sigla }}</h2>
 
         {% if mostras|length > 1 %}
           <p class="lead">
@@ -171,7 +169,7 @@
     <div class="shell">
       <div class="dias__cabeca">
         <p class="rotulo">Programação geral</p>
-        <h2>Como a semana se divide</h2>
+        <h2>{{ site.programacao_titulo }}</h2>
         <p class="dias__link">
           <a href="{% url 'cronograma' %}">Ver o cronograma completo, dia por dia
             <span class="seta" aria-hidden="true">→</span></a>
@@ -179,18 +177,12 @@
       </div>
 
       <ul class="dias__lista">
-        <li class="dia revela" style="--i:0">
-          <p class="dia__data">27/10 <small>terça</small></p>
-          <p>Feira das Profissões e Empreendedorismo</p>
-        </li>
-        <li class="dia revela" style="--i:1">
-          <p class="dia__data">28/10 <small>quarta</small></p>
-          <p>Cerimônia de abertura, Palestra de abertura,  Mostras Científica, Tecnológica, Empreendedora, Curricularização da Extensão e Mesa redonda</p>
-        </li>
-        <li class="dia revela" style="--i:2">
-          <p class="dia__data">29 e 30/10 <small>quinta e sexta</small></p>
-          <p>SIAAGRO, oficinas, demonstrações e visitações</p>
-        </li>
+        {% for dia in site.dias_da_programacao %}
+          <li class="dia revela" style="--i:{{ forloop.counter0 }}">
+            <p class="dia__data">{{ dia.rotulo }}{% if dia.dia_da_semana %} <small>{{ dia.dia_da_semana }}</small>{% endif %}</p>
+            <p>{{ dia.texto|em_linha }}</p>
+          </li>
+        {% endfor %}
       </ul>
     </div>
   </section>
@@ -211,44 +203,29 @@
     <div class="shell">
       <div class="cabeca-secao">
         <p class="rotulo">Eventos</p>
-        <h2>Sete eventos, inscrição por evento</h2>
-        <p class="lead">
-          Cada evento tem inscrição própria. Veja abaixo o que cada um aborda, quem
-          responde por ele e a programação resumida.
-        </p>
+        <h2>{{ site.eventos_titulo }}</h2>
+        {% if site.eventos_texto %}
+          <p class="lead">{{ site.eventos_texto|em_linha }}</p>
+        {% endif %}
       </div>
 
       <div class="guia" id="inscrever">
         <div class="guia__cabeca">
-          <b>Como se inscrever</b>
-          <small>Pelo SUAP, evento por evento — em três passos</small>
+          <b>{{ site.guia_titulo }}</b>
+          {% if site.guia_subtitulo %}<small>{{ site.guia_subtitulo }}</small>{% endif %}
         </div>
-
         <ol class="passos">
-          <li class="passo">
-            <p class="passo__n" aria-hidden="true">1</p>
-            <h3>Escolha o evento</h3>
-            <p>Cada um dos sete eventos abaixo tem inscrição própria. Dá para se
-            inscrever em mais de um.</p>
-          </li>
-          <li class="passo">
-            <p class="passo__n" aria-hidden="true">2</p>
-            <h3>Clique em “Inscreva-se”</h3>
-            <p>O botão vermelho do cartão leva direto ao formulário daquele
-            evento no SUAP.</p>
-          </li>
-          <li class="passo">
-            <p class="passo__n" aria-hidden="true">3</p>
-            <h3>Ainda não tem botão?</h3>
-            <p>Onde estiver escrito <b>“Inscrições em breve”</b>, a inscrição
-            daquele evento ainda não abriu. Vale conferir mais perto de outubro.</p>
-          </li>
+          {% for passo in site.passos_da_inscricao %}
+            <li class="passo">
+              <p class="passo__n" aria-hidden="true">{{ forloop.counter }}</p>
+              <h3>{{ passo.titulo }}</h3>
+              <p>{{ passo.texto|em_linha }}</p>
+            </li>
+          {% endfor %}
         </ol>
-
-        <p class="guia__nota">
-          A submissão de trabalhos é outra coisa, e é uma só para a semana
-          inteira: <a href="#trabalhos">ver como enviar</a>.
-        </p>
+        {% if site.guia_nota %}
+          <p class="guia__nota">{{ site.guia_nota|em_linha }}</p>
+        {% endif %}
       </div>
 
       <div class="grade-eventos">
@@ -306,47 +283,31 @@
       <div class="sobre__texto">
         <div class="cabeca-secao">
           <p class="rotulo">Sobre</p>
-          <h2>Uma semana para mostrar o que se faz aqui</h2>
+          <h2>{{ site.sobre_titulo }}</h2>
         </div>
 
-          <p class="prosa" style="margin-top: var(--s-md)">
-          A Semana Nacional de Ciência e Tecnologia é um evento anual que integra
-          pesquisa, extensão e ensino técnico. No IFRO <i>Campus</i> Ariquemes ela toma o
-          <i>Campus</i> inteiro: laboratório de informática, unidades de produção
-          agropecuária, cozinha-escola, sala de aula e pátio viram espaço de visita.
-        </p>
-        <p class="prosa">
-          Nesta edição, o tema <strong>Ciência Delas</strong> dá espaço às trajetórias
-          de mulheres na ciência e na tecnologia ao longo de toda a programação.
-        </p>
+        <div class="prosa sobre__prosa" style="margin-top: var(--s-md)">{{ site.sobre_texto|texto_rico }}</div>
       </div>
 
+      {% comment %}
+        "Quando" e "Onde" saem das datas e do local da semana, e vêm sempre
+        primeiro. O resto da ficha é a lista de /painel/site/.
+      {% endcomment %}
       <dl class="ficha">
         <div>
           <dt>Quando</dt>
-          <dd>27 a 30 de outubro de 2026, de terça a sexta</dd>
+          <dd>{{ site.periodo }}{% if site.dias_da_semana %}, {{ site.dias_da_semana }}{% endif %}</dd>
         </div>
         <div>
           <dt>Onde</dt>
-          <dd>IFRO — <i>Campus</i> Ariquemes, Ariquemes (RO)</dd>
+          <dd>{{ site.local|em_linha }}</dd>
         </div>
-        <div>
-          <dt>Para quem</dt>
-          <dd>Comunidade escolar do <i>Campus</i>, estudantes de outras escolas e público externo</dd>
-        </div>
-        <div>
-          <dt>Trabalhos</dt>
-          <dd>Submissão única para toda a semana, em <a href="#trabalhos">Enviar trabalho</a></dd>
-        </div>
-        <div>
-          <dt>Inscrições</dt>
-          <dd>Pelo SUAP, uma por evento. Veja <a href="#inscrever">Como se inscrever</a></dd>
-        </div>
-        <div>
-          <dt>Contato</dt>
-          <!-- TROCAR pelo e-mail ou @ das redes da comissão organizadora -->
-          <dd><span class="pendente">depesp.ariquemes@ifro.edu.br</span></dd>
-        </div>
+        {% for item in site.itens_da_ficha %}
+          <div>
+            <dt>{{ item.rotulo }}</dt>
+            <dd>{{ item.texto|em_linha }}</dd>
+          </div>
+        {% endfor %}
       </dl>
 
     </div>

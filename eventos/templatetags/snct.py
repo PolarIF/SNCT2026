@@ -6,6 +6,40 @@ from django.utils.safestring import mark_safe
 
 register = template.Library()
 
+# [texto](endereço). O endereço só pode ser de site (http/https), de e-mail,
+# um caminho do próprio site ou uma âncora: "javascript:" e companhia não
+# casam com o padrão e ficam como texto. Aspas e < > não entram no endereço,
+# e o texto já chegou escapado — não há como sair do atributo href.
+LINK = re.compile(r"\[([^\]]+)\]\(((?:https?://|mailto:|/|#)[^\s()\"<>]*)\)")
+
+
+def _links(escapado):
+    def troca(m):
+        texto, url = m.group(1), m.group(2)
+        fora = url.startswith(("http://", "https://"))
+        alvo = ' target="_blank" rel="noopener"' if fora else ""
+        return f'<a href="{url}"{alvo}>{texto}</a>'
+
+    return LINK.sub(troca, escapado)
+
+
+def _em_linha(escapado):
+    """O que vale dentro de uma linha: Campus em itálico, negrito e link."""
+    escapado = re.sub(r"\bCampus\b", "<i>Campus</i>", escapado)
+    # O negrito chegou com o texto das mostras, que destaca o que não pode
+    # passar batido ("modalidade banner"). Vem depois do escape, como o
+    # resto: os asteriscos não carregam HTML nenhum.
+    escapado = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escapado)
+    return _links(escapado)
+
+
+@register.filter(needs_autoescape=True)
+def em_linha(texto, autoescape=True):
+    """A marcação de texto_rico sem parágrafos: para um título, um item de
+    ficha, uma linha só. **negrito**, [link](endereço) e *Campus*."""
+    escapar = conditional_escape if autoescape else (lambda x: x)
+    return mark_safe(_em_linha(escapar(texto or "")))
+
 
 @register.filter(needs_autoescape=True)
 def campus(texto, autoescape=True):
@@ -30,13 +64,14 @@ def texto_rico(texto, autoescape=True):
         ## Título           vira <h2>
         - item              vira item de lista
         **texto**           vira negrito
+        [texto](endereço)   vira link
         linha em branco     separa parágrafos
 
     Linhas seguidas viram um parágrafo só, e não um por linha: quem escreve
     num textarea quebra a linha onde a janela acaba, sem querer dizer nada
     com isso.
 
-    Tudo é escapado antes de qualquer coisa, e só estas quatro formas viram
+    Tudo é escapado antes de qualquer coisa, e só estas cinco formas viram
     marcação: um `<script>` digitado no painel aparece como texto na tela.
     """
     escapar = conditional_escape if autoescape else (lambda x: x)
@@ -62,11 +97,7 @@ def texto_rico(texto, autoescape=True):
             fecha_a_lista()
             continue
 
-        escapada = re.sub(r"\bCampus\b", "<i>Campus</i>", escapar(linha))
-        # O negrito chegou com o texto das mostras, que destaca o que não
-        # pode passar batido ("modalidade banner"). Vem depois do escape,
-        # como o resto: os asteriscos não carregam HTML nenhum.
-        escapada = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escapada)
+        escapada = _em_linha(escapar(linha))
         if linha.startswith("## "):
             fecha_o_paragrafo()
             fecha_a_lista()
