@@ -84,6 +84,10 @@
                         <span class="crono-item__nota">inscrição só desta atividade</span>
                       {% endif %}
                     </p>
+                  {% elif not evento.tem_inscricao %}
+                    <p class="crono-item__acao">
+                      <span class="crono-item__nota">Entrada livre, sem inscrição</span>
+                    </p>
                   {% endif %}
                 </div>
               </li>

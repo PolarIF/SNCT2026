@@ -116,7 +116,10 @@
                 {% if mostra.prazo %}Prazo de envio{% else %}Envio dos trabalhos{% endif %}
               </p>
 
-              {% if mostra.prazo %}
+              {% if mostra.encerrada %}
+                {# Passou do prazo: a data deixa de ser a notícia, o estado é que é. #}
+                <p class="envio__destaque envio__destaque--estado">Prazo encerrado</p>
+              {% elif mostra.prazo %}
                 <p class="envio__destaque">
                   <b>{{ mostra.prazo|date:"j" }}</b>
                   <span>de {{ mostra.prazo|date:"F"|lower }}</span>
@@ -127,7 +130,13 @@
                 </p>
               {% endif %}
 
-              {% if mostra.mostra_botao %}
+              {% if mostra.encerrada %}
+                <p class="envio__nota">
+                  Os envios terminaram em {{ mostra.prazo|date:"j" }} de {{ mostra.prazo|date:"F"|lower }}.
+                  As datas da avaliação e do resultado estão
+                  <a href="{% url 'trabalhos' %}#{{ mostra.slug }}">na página da submissão</a>.
+                </p>
+              {% elif mostra.mostra_botao %}
                 <a class="botao botao--acao botao--grande" href="{% url 'trabalhos' %}#{{ mostra.slug }}">
                   Enviar meu trabalho <span class="seta" aria-hidden="true">→</span>
                 </a>
@@ -176,7 +185,7 @@
         </li>
         <li class="dia revela" style="--i:1">
           <p class="dia__data">28/10 <small>quarta</small></p>
-          <p>Solenidade de Lançamento e Mostras dos cursos</p>
+          <p>Cerimônia de abertura, Palestra de abertura,  Mostras Científica, Tecnológica, Empreendedora, Curricularização da Extensão e Mesa redonda</p>
         </li>
         <li class="dia revela" style="--i:2">
           <p class="dia__data">29 e 30/10 <small>quinta e sexta</small></p>

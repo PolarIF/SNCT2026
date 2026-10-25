@@ -187,7 +187,7 @@ class EventoAdmin(_AuditoriaContextoMixin, admin.ModelAdmin):
     # A data saiu de Evento e foi para Horario, então nem list_display nem
     # list_filter nem date_hierarchy podem mais apontar para ela. O que fica é
     # uma coluna que lê os horários já carregados pelo prefetch.
-    list_display = ["titulo", "area", "quando", "local", "tem_inscricao_propria"]
+    list_display = ["titulo", "area", "quando", "local", "tem_inscricao", "tem_inscricao_propria"]
     list_filter = ["area", "horarios__data"]
     search_fields = ["titulo", "descricao", "local"]
     autocomplete_fields = ["area"]

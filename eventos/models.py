@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.text import slugify
 
@@ -99,6 +100,12 @@ class Evento(models.Model):
     # Quando a atividade acontece não mora mais aqui: um evento pode ter mais
     # de um dia e horário, e cada um é uma linha em `horarios`.
     local = models.CharField("local", max_length=120, blank=True)
+    tem_inscricao = models.BooleanField(
+        "esta atividade tem inscrição",
+        default=True,
+        help_text="Desmarque para atividade aberta, em que é só chegar: o "
+        "cronograma não mostra botão de inscrição e avisa que a entrada é livre.",
+    )
     link_inscricao = models.URLField(
         "link de inscrição",
         max_length=300,
@@ -149,10 +156,16 @@ class Evento(models.Model):
     def mostra_botao_inscricao(self):
         """Quando o cronograma mostra o botão de inscrição deste evento.
 
+        Atividade marcada como sem inscrição nunca tem botão: sem isso, uma
+        palestra aberta herdava o "Inscreva-se" do curso e mandava a pessoa
+        para um formulário de que ela não precisava.
+
         Link próprio aparece sempre: quem o colou aqui quis inscrição nesta
         atividade, e não faria sentido depender do interruptor da área. Sem
         link próprio, o botão é o da área e obedece ao interruptor dela.
         """
+        if not self.tem_inscricao:
+            return False
         if self.link_inscricao:
             return True
         return self.area.mostra_botao_inscricao
@@ -312,7 +325,8 @@ class Submissao(models.Model):
         "prazo de envio",
         null=True,
         blank=True,
-        help_text="Opcional. Sem data preenchida, a página não fala em prazo.",
+        help_text="Opcional. É o último dia de envio: no dia seguinte a página "
+        "mostra “Prazo encerrado” sozinha. Sem data, a página não fala em prazo.",
     )
     ordem = models.PositiveSmallIntegerField(
         "ordem",
@@ -340,9 +354,23 @@ class Submissao(models.Model):
         return list(self.links.all())
 
     @property
+    def encerrada(self):
+        """O prazo já passou? Então a submissão acabou, marcada ou não.
+
+        O prazo vale o dia inteiro: no dia 12 ainda dá para enviar, e no 13 a
+        página já diz "Prazo encerrado". Fecha sozinho, sem ninguém precisar
+        lembrar de desmarcar a caixa — e desmarcar depois do prazo também
+        não faz a página voltar a dizer "Em breve", que seria mentira.
+
+        O dia é o do fuso do campus (TIME_ZONE), e não o do servidor.
+        """
+        return bool(self.prazo and timezone.localdate() > self.prazo)
+
+    @property
     def mostra_botao(self):
-        """Só há botão quando a submissão está aberta e há para onde ir."""
-        return bool(self.aberta and self.links_de_envio)
+        """Só há botão quando a submissão está aberta, dentro do prazo e há
+        para onde ir."""
+        return bool(self.aberta and not self.encerrada and self.links_de_envio)
 
     @property
     def tem_documento(self):
@@ -352,6 +380,8 @@ class Submissao(models.Model):
     @property
     def situacao(self):
         """O que a página inicial mostra hoje no cartão desta mostra."""
+        if self.encerrada:
+            return "“Prazo encerrado” — o prazo já passou, e o botão sumiu sozinho"
         if self.mostra_botao:
             return "botão “Enviar meu trabalho”"
         if self.aberta:
